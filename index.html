@@ -614,9 +614,10 @@ function primaryViceDiagram(scene,cue){
  if(showsComplements)word(0,181,'Dependence','#232923');
  scene.append(layer);
  const progress=(ms,start,duration)=>Math.min(1,Math.max(0,(ms-start)/duration));
- playWhileReading(showsComplements?6300:4800,ms=>{
-   const starts=showsComplements?[1500,4000,4900]:[0,1950];
-   const traces=pairs.map((_,k)=>progress(ms,starts[k],showsComplements?(k===0?1800:850):1500));
+ const starts=showsComplements?[1500,4000,4900]:[0,1950];
+ const drawTimes=showsComplements?[1800,850,850]:[1500,1500];
+ playWhileReading(showsComplements?6600:4800,ms=>{
+   const traces=pairs.map((_,k)=>progress(ms,starts[k],drawTimes[k]));
    const reveals=pairs.map((_,k)=>showsComplements&&k>0?progress(ms,starts[k],650):1);
    rings.forEach((node,i)=>{
      const target=pairs.findIndex(pair=>pair[2]===i);
@@ -629,6 +630,10 @@ function primaryViceDiagram(scene,cue){
    });
    paths.forEach((path,k)=>{
      path.setAttribute('stroke-dashoffset',1-traces[k]);
+     if(showsComplements){
+       const fadeStart=starts[k]+drawTimes[k]+200;
+       path.setAttribute('opacity',1-progress(ms,fadeStart,500));
+     }
      labels[k].setAttribute('opacity',reveals[k]);
    });
  });
