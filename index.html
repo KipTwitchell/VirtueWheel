@@ -406,18 +406,18 @@ function viceView(){
  action(viceOrigin==='hub'?'Back to Temperance':'Back to virtue wheel',()=>{mode=viceOrigin;render()});
 }
 const beliefs = [
- ['Insufficient','I am not good enough.','My need to grow is part of being human. I can love and be loved while I grow.'],
- ['Rejected','I do not belong.','I can accept correction and still belong.'],
- ['Worthless','I do not matter.','My weaknesses leave room to grow. My capacity for growth gives me worth.'],
- ['Abandoned','No one loves me.','Even when I feel cast off, I can exercise agency and grow.'],
- ['Empty','I have nothing.','My need for replenishment gives me a reason to seek hope grounded in truth.'],
- ['Broken','I will always be broken.','I can offer the Savior a broken heart and receive the possibility of becoming whole.'],
- ['Privileged','I am right.','Privilege carries a responsibility to extend grace and care.'],
- ['Entitled','I deserve more.','The power to act for good brings accountability for what I do.'],
- ['Exceptional','I am better.','I can use my particular gifts in the service of others.'],
- ['Alone','It is all up to me.','I can draw strength from solitude and still call on my community.'],
- ['Dependent','I need this.','I can acknowledge what I need and build relationships of mutual support.'],
- ['Damned','Nothing will ever change.','I can turn to God and begin to change again.']
+ ['Insufficient','I am not good enough.','My need to grow is part of being human. I can love and be loved while I grow.',"A supervisor asks you to revise one paragraph. You take it as proof that you are not good enough for the job."],
+ ['Rejected','I do not belong.','I can accept correction and still belong.',"Friends get together without you. You assume there is no place for you in the group."],
+ ['Worthless','I do not matter.','My weaknesses leave room to grow. My capacity for growth gives me worth.',"Your suggestion goes unnoticed at a meeting. You conclude that your presence makes no difference."],
+ ['Abandoned','No one loves me.','Even when I feel cast off, I can exercise agency and grow.',"Someone close to you cancels a visit. You take it as a sign that nobody loves you."],
+ ['Empty','I have nothing.','My need for replenishment gives me a reason to seek hope grounded in truth.',"You lose a job you cared about. Looking at what remains, you feel you have nothing to build on."],
+ ['Broken','I will always be broken.','I can offer the Savior a broken heart and receive the possibility of becoming whole.',"You fall back into a habit you hoped to leave behind. You decide you will always be broken."],
+ ['Privileged','I am right.','Privilege carries a responsibility to extend grace and care.',"A colleague points out a flaw in your plan. You dismiss it because you assume your judgment must be right."],
+ ['Entitled','I deserve more.','The power to act for good brings accountability for what I do.',"Your team divides a reward evenly. You feel owed a larger share because you see your work as more deserving."],
+ ['Exceptional','I am better.','I can use my particular gifts in the service of others.',"You learn a skill faster than a coworker and start thinking that makes you a better person."],
+ ['Alone','It is all up to me.','I can draw strength from solitude and still call on my community.',"You face a family problem and keep it to yourself, convinced you have to handle it alone."],
+ ['Dependent','I need this.','I can acknowledge what I need and build relationships of mutual support.',"A friend takes longer than usual to reply. You feel you need their reassurance before you can be okay."],
+ ['Damned','Nothing will ever change.','I can turn to God and begin to change again.',"An old conflict flares up again. You decide nothing between you will ever change."]
 ];
 function drawBeliefRing(scene,focus=0){
  shape('circle',{cx:220,cy:220,r:215,fill:'#fffdf9'},scene);
@@ -941,7 +941,7 @@ function drawBeliefSequence(activeIndex){
 function beliefReadingView(){
  const atoning=beliefReading==='atoning',i=readingIndex;
  const overview=i<0;
- const [name,belief,response]=beliefs[Math.max(0,i)];
+ const [name,belief,response,example]=beliefs[Math.max(0,i)];
  $('heading').textContent=overview?(atoning?'Atoning beliefs':'What are shame beliefs?'):name;
  $('caption').textContent=overview
    ? atoning
@@ -950,9 +950,9 @@ function beliefReadingView(){
    : '“'+belief+'”';
  if(!atoning)drawBeliefSequence(i);
  schemaSlideCount((atoning?2*beliefs.length+7:4)+i);
- if(!overview&&atoning){
+ if(!overview){
    const note=document.createElement('p');
-   note.textContent=response;
+   note.textContent=atoning?response:example;
    $('extra').append(note);
  }
  action('Back',()=>{
