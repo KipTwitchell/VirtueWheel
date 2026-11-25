@@ -519,7 +519,7 @@ function playAgencyIntro(scene){
    }
    tick(start);
  }
- if(guidedBeliefs&&fromOverviewTour){
+ if(guidedBeliefs){
    action('Back',()=>{schemaIntro='overview';render()});
    action('Next',end);
    if(resumeIntroStage){resumeIntroStage=0;draw(stops[stops.length-1])}
@@ -546,9 +546,12 @@ function schemaFromHalves(){
 
 let schemaOrigin, schemaIndex, schemaIntro=false;
 function enterSchema(){
- guidedBeliefs=false;
- schemaOrigin=mode;
- schemaIndex=mode==='vice'?viceIndex:angle===null?null:((angle%12)+12)%12;
+ fromOverviewTour=mode==='tour';
+ schemaOrigin=fromOverviewTour?'full':mode;
+ guidedBeliefs=true;
+ schemaIndex=0;
+ schemaLandingHalf=null;
+ resumeIntroStage=0;
  clearTimeout(revealTimer);
  if(mode==='vice')ringReady=true;
  schemaIntro='overview';mode='schema';render();
@@ -867,7 +870,7 @@ function tourView(){
  const last=slide===slides.length-1;
  action(last?'Continue to Shame Schema':'Next',()=>{
    if(!last){slide++;render();return}
-   fromOverviewTour=true;resumeIntroStage=0;guidedBeliefs=true;schemaIndex=0;schemaOrigin='full';schemaIntro='overview';mode='schema';render();
+   enterSchema();
  });
  action('Return to wheel',()=>setMode('full'));
 }
@@ -907,8 +910,7 @@ function beliefReadingView(){
  action('Back',()=>{
    if(!overview){showBeliefReading(beliefReading,i-1);return}
    if(atoning){mode='schema';chooseBelief(beliefs.length-1);return}
-   if(fromOverviewTour){mode='schema';schemaIntro=true;resumeIntroStage=3;render()}
-   else {mode='schema';chooseBelief(null)}
+   mode='schema';schemaIntro=true;resumeIntroStage=3;render();
  });
  if(i<beliefs.length-1)action(overview?'Begin':'Next belief',()=>showBeliefReading(beliefReading,i+1));
  else if(atoning)action('Finish tour',()=>{guidedBeliefs=false;setMode('full')});
@@ -949,7 +951,7 @@ function schemaView(){
    const overview=schemaIntro==='overview';
    $('heading').textContent=overview?'The Shame Schema':'Innocence at birth';
    $('caption').textContent=overview
-     ? 'Remember the vice wheel below the virtues. Viewed from above, its wider rim surrounds them. The Shame Schema places agency between those floors and explores how beliefs about ourselves can shape the choices we make.'
+     ? 'The vice wheel sits below the virtue wheel. Viewed from above, its wider rim surrounds them. The Shame Schema places agency between those floors and explores how beliefs about ourselves can shape the choices we make.'
      : 'We begin in innocence on the white middle floor of agency. From there we can move toward virtue above or vice below. As the three floors turn to face us, agency becomes the ring between the virtues and the wider rim of vices.';
 
    playAgencyIntro(scene);return;
