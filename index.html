@@ -946,21 +946,26 @@ function drawBeliefSequence(activeIndex){
 function drawAtoningPair(index){
  const scene=$('schemaScene');scene.replaceChildren();
  const complement=(index+6)%12;
+ $('wheel').setAttribute('viewBox','0 0 440 440');
  for(let i=0;i<positions.length;i++){
    const selected=i===index||i===complement;
-   shape('path',{d:sector(i,208),fill:positions[i][2],
+   const slot=(i-index+12)%12;
+   shape('path',{d:sector(slot,166),fill:positions[i][2],
      'fill-opacity':selected?1:.17,stroke:'#fffdf9','stroke-width':2},scene);
-   if(selected){
-     const [x,y]=point(i===index?141:158,i*30);
-     const label=tourLabel(scene,x,y+5,virtueNames[i],17);
-     label.setAttribute('fill',positions[i][3]);
-     label.setAttribute('font-weight','700');
-     label.setAttribute('transform','rotate('+labelAngle(i)+' '+x+' '+y+')');
-   }
  }
+ const name=tourLabel(scene,220,92,beliefs[index][0],14);
+ name.setAttribute('fill',positions[index][3]);
+ tourLabel(scene,220,118,virtueNames[index],19).setAttribute('fill',positions[index][3]);
+ tourLabel(scene,220,338,virtueNames[complement],19).setAttribute('fill',positions[complement][3]);
  shape('circle',{cx:220,cy:220,r:59,fill:'#fffdf9'},scene);
  tourLabel(scene,220,216,'Draw on both',15);
  tourLabel(scene,220,237,'virtues',15);
+ [[index,340,18,'M260 70 L282 40 H306'],[complement,100,404,'M180 370 L158 400 H136']]
+   .forEach(([i,x,y,leader])=>{
+     shape('path',{d:leader,fill:'none',stroke:'#789084','stroke-width':1.5},scene);
+     tourLabel(scene,x,y,'Avoid',13).setAttribute('font-weight','700');
+     tourLabel(scene,x,y+18,vices[i].join(' / '),12);
+   });
 }
 function shameHalvesView(){
  drawBeliefSequence(-1);
@@ -992,13 +997,6 @@ function beliefReadingView(){
    const exampleNote=document.createElement('p');
    exampleNote.textContent='For example, when I think “I am not good enough,” Love helps me accept care. Principle helps me ask what I can learn. I can seek support and take responsibility without grasping for approval or insisting that I am always right.';
    $('extra').append(exampleNote);
- }
- if(atoning){
-   const avoid=document.createElement('p'),label=document.createElement('strong');
-   label.textContent='Avoid ';
-   const index=Math.max(0,i),complement=(index+6)%12;
-   avoid.append(label,vices[index].join(' / ')+' and '+vices[complement].join(' / ')+'.');
-   $('extra').append(avoid);
  }
  action('Back',()=>{
    if(!atoning&&i===6){showBeliefReading('halves',5);return}
