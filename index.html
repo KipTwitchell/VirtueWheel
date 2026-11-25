@@ -891,9 +891,14 @@ function tourView(){
  });
  action('Return to wheel',()=>setMode('full'));
 }
-let beliefReading,readingIndex,fullSchemaBackIndex;
-function schemaSlideCount(number){
- tourCount('Shame Schema · Slide '+number+' of '+(3*beliefs.length+7));
+let beliefReading,readingIndex,fullSchemaBackIndex,atoningBackIndex;
+const responseSection='Virtue and vice responses';
+function openAtoningBeliefs(){
+ atoningBackIndex=mode==='orientation'?null:schemaIndex;
+ showBeliefReading('atoning',-1);
+}
+function schemaSlideCount(number,section='Shame Schema'){
+ tourCount(section+' · Slide '+number+' of '+(3*beliefs.length+7));
 }
 function openFullSchema(){
  fullSchemaBackIndex=readingIndex;
@@ -998,7 +1003,11 @@ function beliefReadingView(){
  action('Back',()=>{
    if(!atoning&&i===6){showBeliefReading('halves',5);return}
    if(!overview){showBeliefReading(beliefReading,i-1);return}
-   if(atoning){mode='schema';chooseBelief(beliefs.length-1);return}
+   if(atoning){
+     if(atoningBackIndex===null)orientBeliefs();
+     else {mode='schema';chooseBelief(atoningBackIndex)}
+     return;
+   }
    mode='schema';schemaIntro=true;resumeIntroStage=3;render();
  });
  if(!atoning&&i===5)action('Explore the shame halves',()=>showBeliefReading('halves',5));
@@ -1026,9 +1035,9 @@ function orientationView(){
  const ring=shape('g',{inert:'','pointer-events':'none'},scene);
  drawBeliefRing(ring);
  for(const g of ring.querySelectorAll('[tabindex]'))g.removeAttribute('tabindex');
- schemaSlideCount(beliefs.length+6);
+ schemaSlideCount(beliefs.length+6,responseSection);
  $('heading').textContent='Follow the ring clockwise';
- $('caption').textContent='Find Love at twelve o’clock, beside Insufficient. One wedge clockwise is Rejected. As you move forward, the wheel turns to bring each new belief to the top for reading.';
+ $('caption').textContent='Find Love at twelve o’clock, beside Insufficient. One wedge clockwise is Rejected. The wheel turns to bring each belief to the top so you can compare how a virtue and a vice might respond.';
  const arrow=shape('g',{'aria-hidden':'true'},ring);
  const radius=168,start=point(radius,0);
  shape('circle',{cx:start[0],cy:start[1],r:3,fill:'#225442'},arrow);
@@ -1041,8 +1050,10 @@ function orientationView(){
    tip.setAttribute('transform','translate('+end+') rotate('+angle+')');
  });
  function resume(index){mode='schema';chooseBelief(index)}
- action('Back',()=>setMode('schemaTotal'));action('Next',startBeliefRelationships);
- action('Exit to the Agency Ring',()=>resume(null));
+ action('Back',()=>setMode('schemaTotal'));
+ action('Explore virtue and vice responses',startBeliefRelationships);
+ action('Skip to atoning beliefs',openAtoningBeliefs);
+ action('Return to Shame Schema',()=>resume(null));
 }
 const beliefContrasts=[
  ['I can care for someone without needing their affection to prove my worth.','I may chase affection to prove I am enough, even when it costs someone else their freedom.'],
@@ -1072,7 +1083,7 @@ function schemaView(){
    playAgencyIntro(scene);return;
  }
  drawBeliefRing(scene,guidedBeliefs&&chosen?schemaIndex:0);
- if(guidedBeliefs&&chosen)schemaSlideCount(beliefs.length+7+schemaIndex);
+ if(guidedBeliefs&&chosen)schemaSlideCount(beliefs.length+7+schemaIndex,responseSection);
  $('heading').textContent=chosen?beliefs[schemaIndex][0]:'The Agency Ring';
  $('caption').textContent=chosen?'“'+beliefs[schemaIndex][1]+'”':'The white circle is the middle floor seen from above. Choose a belief on the ring or begin the guided path.';
  if(chosen){
@@ -1086,15 +1097,16 @@ function schemaView(){
      if(i>0){chooseBelief(i-1);return}
      orientBeliefs();
    });
-   if(guidedBeliefs&&i===beliefs.length-1)action('Continue to atoning beliefs',()=>showBeliefReading('atoning',-1));
+   if(guidedBeliefs&&i===beliefs.length-1)action('Continue to atoning beliefs',openAtoningBeliefs);
    else action('Next belief',()=>chooseBelief((i+1)%12));
-   action('Exit to the Agency Ring',()=>chooseBelief(null));
+   if(guidedBeliefs&&i===0)action('Skip to atoning beliefs',openAtoningBeliefs);
+   action(guidedBeliefs?'Return to Shame Schema':'Exit to the Agency Ring',()=>chooseBelief(null));
  }else{
    const p=document.createElement('p');p.textContent='The guided path begins with Love. The child-like half draws on Harper and Hoopes. Kip and Abby propose the corresponding mature half.';$('extra').append(p);
    action('Begin guided path',()=>{fromOverviewTour=false;guidedBeliefs=true;showBeliefReading('belief',-1)});
    action('Explore Agency Ring halves',enterPatterns);
  }
- action(schemaOrigin==='vice'?'Back to vice ring':'Back to virtue wheel',()=>{mode=schemaOrigin;render()});
+ if(!guidedBeliefs||!chosen)action(schemaOrigin==='vice'?'Back to vice ring':'Back to virtue wheel',()=>{mode=schemaOrigin;render()});
 }
 
 const quadrants=[
