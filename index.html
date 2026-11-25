@@ -898,7 +898,7 @@ function openAtoningBeliefs(){
  showBeliefReading('atoning',-1);
 }
 function schemaSlideCount(number,section='Shame Schema'){
- tourCount(section+' · Slide '+number+' of '+(3*beliefs.length+7));
+ tourCount(section+' · Slide '+number+' of '+(3*beliefs.length+8));
 }
 function openFullSchema(){
  fullSchemaBackIndex=readingIndex;
@@ -950,30 +950,45 @@ function drawAtoningPair(index){
  for(let i=0;i<positions.length;i++){
    const selected=i===index||i===complement;
    const slot=(i-index+12)%12;
-   shape('path',{d:sector(slot,166),fill:positions[i][2],
+   shape('path',{d:sector(slot,150),fill:positions[i][2],
      'fill-opacity':selected?1:.17,stroke:'#fffdf9','stroke-width':2},scene);
  }
- const name=tourLabel(scene,220,92,beliefs[index][0],14);
+ const name=tourLabel(scene,220,94,beliefs[index][0],14);
  name.setAttribute('fill',positions[index][3]);
- tourLabel(scene,220,118,virtueNames[index],19).setAttribute('fill',positions[index][3]);
- tourLabel(scene,220,338,virtueNames[complement],19).setAttribute('fill',positions[complement][3]);
+ tourLabel(scene,220,119,virtueNames[index],19).setAttribute('fill',positions[index][3]);
+ tourLabel(scene,220,340,virtueNames[complement],19).setAttribute('fill',positions[complement][3]);
  shape('circle',{cx:220,cy:220,r:59,fill:'#fffdf9'},scene);
  tourLabel(scene,220,216,'Draw on both',15);
  tourLabel(scene,220,237,'virtues',15);
- [[index,340,18,'M260 70 L282 40 H306'],[complement,100,404,'M180 370 L158 400 H136']]
-   .forEach(([i,x,y,leader])=>{
-     shape('path',{d:leader,fill:'none',stroke:'#789084','stroke-width':1.5},scene);
-     tourLabel(scene,x,y,'Avoid',13).setAttribute('font-weight','700');
-     tourLabel(scene,x,y+18,vices[i].join(' / '),12);
-   });
+ [[index,370,91],[complement,70,312]].forEach(([i,x,y])=>{
+   tourLabel(scene,x,y,'Avoid',13).setAttribute('font-weight','700');
+   vices[i].forEach((vice,row)=>tourLabel(scene,x,y+19+row*16,vice,13));
+ });
 }
 function shameHalvesView(){
- drawBeliefSequence(-1);
+ const responses=beliefReading==='responseHalves';
+ if(responses){
+   const scene=$('schemaScene');scene.replaceChildren();schemaIndex=null;
+   drawBeliefRing(scene);
+   for(const node of scene.querySelectorAll('[tabindex]')){
+     node.removeAttribute('tabindex');node.removeAttribute('role');
+     node.onclick=null;node.onkeydown=null;node.style.pointerEvents='none';
+   }
+ }else drawBeliefSequence(-1);
  $('heading').textContent='The two shame halves';
  $('caption').textContent='Joy is the last virtue beside the childlike sequence. Principle begins the mature sequence. Compare how the first half frames what we feel we lack, while the second often frames what we think we are owed or must control.';
- schemaSlideCount(10);
- action('Back to Broken',()=>showBeliefReading('belief',5));
- action('Continue to Privileged',()=>showBeliefReading('belief',6));
+ if(responses){
+   $('caption').textContent='The first six responses take us from Love to Joy. At Principle, the mature half begins. Here the challenge shifts from what we fear we lack toward what we think we deserve or must control.';
+   schemaSlideCount(beliefs.length+13,responseSection);
+   const resume=index=>{mode='schema';chooseBelief(index)};
+   action('Back to Broken',()=>resume(5));
+   action('Continue to Privileged',()=>resume(6));
+   action('Return to Shame Schema',()=>resume(null));
+ }else{
+   schemaSlideCount(10);
+   action('Back to Broken',()=>showBeliefReading('belief',5));
+   action('Continue to Privileged',()=>showBeliefReading('belief',6));
+ }
 }
 function beliefReadingView(){
  const atoning=beliefReading==='atoning',i=readingIndex;
@@ -987,7 +1002,7 @@ function beliefReadingView(){
    : atoning?'Instead of thinking “'+belief.replace(/\.$/,'')+'”, focus on this atoning belief.':'“'+belief+'”';
  if(atoning)drawAtoningPair(Math.max(0,i));
  else drawBeliefSequence(i);
- schemaSlideCount((atoning?2*beliefs.length+8:4)+i+(!atoning&&i>=6?1:0));
+ schemaSlideCount((atoning?2*beliefs.length+9:4)+i+(!atoning&&i>=6?1:0));
  if(!overview){
    const note=document.createElement('p');
    note.textContent=atoning?'“'+response+'”':example;
@@ -1081,7 +1096,7 @@ function schemaView(){
    playAgencyIntro(scene);return;
  }
  drawBeliefRing(scene,guidedBeliefs&&chosen?schemaIndex:0);
- if(guidedBeliefs&&chosen)schemaSlideCount(beliefs.length+7+schemaIndex,responseSection);
+ if(guidedBeliefs&&chosen)schemaSlideCount(beliefs.length+7+schemaIndex+(schemaIndex>=6?1:0),responseSection);
  $('heading').textContent=chosen?beliefs[schemaIndex][0]:'The Agency Ring';
  $('caption').textContent=chosen?'“'+beliefs[schemaIndex][1]+'”':'The white circle is the middle floor seen from above. Choose a belief on the ring or begin the guided path.';
  if(chosen){
@@ -1092,10 +1107,12 @@ function schemaView(){
    passage(vices[i].join(' / ')+' — If I take it as true.',beliefContrasts[i][1]);
    if(!guidedBeliefs)action('Previous belief',()=>chooseBelief((i+11)%12));
    else action('Back',()=>{
+     if(i===6){showBeliefReading('responseHalves',5);return}
      if(i>0){chooseBelief(i-1);return}
      orientBeliefs();
    });
    if(guidedBeliefs&&i===beliefs.length-1)action('Continue to atoning beliefs',openAtoningBeliefs);
+   else if(guidedBeliefs&&i===5)action('Explore the shame halves',()=>showBeliefReading('responseHalves',5));
    else action('Next belief',()=>chooseBelief((i+1)%12));
    if(guidedBeliefs&&i===0)action('Skip to atoning beliefs',openAtoningBeliefs);
    action(guidedBeliefs?'Return to Shame Schema':'Exit to the Agency Ring',()=>chooseBelief(null));
@@ -1339,7 +1356,7 @@ function render(){
  if(mode==='patterns'){patternView();return}
  if(mode==='schemaTotal'){schemaTotalView();return}
  if(mode==='orientation'){orientationView();return}
- if(mode==='schemaText'){if(beliefReading==='halves')shameHalvesView();else beliefReadingView();return}
+ if(mode==='schemaText'){if(['halves','responseHalves'].includes(beliefReading))shameHalvesView();else beliefReadingView();return}
  if(mode==='schema'){schemaView();return}
  if(mode==='vice'){viceView();return}
  if(mode==='hub'){
