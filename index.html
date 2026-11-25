@@ -938,6 +938,29 @@ function drawBeliefSequence(activeIndex){
    tourLabel(scene,220,225,activeIndex<6?'Childlike sequence':'Mature sequence',17);
  }
 }
+function drawAtoningPair(index){
+ const scene=$('schemaScene');scene.replaceChildren();
+ $('wheel').setAttribute('viewBox','0 0 440 182');
+ tourLabel(scene,220,22,'Draw on both virtues',17);
+ [index,(index+6)%12].forEach((i,column)=>{
+   const x=114+212*column;
+   const slice=shape('g',{transform:'translate('+(x-220)+' -140) rotate('+(-30*i)+' 220 220)'},scene);
+   shape('path',{d:sector(i,36),fill:positions[i][2]},slice);
+   tourLabel(scene,x,107,virtueNames[i],19);
+   shape('path',{d:'M'+(x-96)+' 126 H'+(x+96),stroke:'#b0b9b0'},scene);
+   tourLabel(scene,x,147,'Avoid',13);
+   tourLabel(scene,x,168,vices[i].join(' / '),12);
+ });
+ shape('path',{d:'M190 72 H250',stroke:'#789084','stroke-width':1.5,'stroke-dasharray':'4 4'},scene);
+}
+function shameHalvesView(){
+ drawBeliefSequence(-1);
+ $('heading').textContent='The two shame halves';
+ $('caption').textContent='Joy is the last virtue beside the childlike sequence. Principle begins the mature sequence. Compare how the first half frames what we feel we lack, while the second often frames what we think we are owed or must control.';
+ schemaSlideCount(9);
+ action('Back to Broken',()=>showBeliefReading('belief',5));
+ action('Continue to Privileged',()=>showBeliefReading('belief',6));
+}
 function beliefReadingView(){
  const atoning=beliefReading==='atoning',i=readingIndex;
  const overview=i<0;
@@ -945,15 +968,21 @@ function beliefReadingView(){
  $('heading').textContent=overview?(atoning?'Atoning beliefs':'What are shame beliefs?'):name;
  $('caption').textContent=overview
    ? atoning
-     ? 'An atoning belief offers a way to face a painful thought without letting it have the last word. Read each response alongside the belief it addresses.'
+     ? 'An atoning belief answers a painful thought. Look at the virtue in that slice and its complement across the wheel. Together they can guide a response that avoids the vice at either end.'
      : 'A shame belief is a painful conclusion about ourselves. Follow the arrows through the childlike sequence and then the mature one.'
    : '“'+belief+'”';
- if(!atoning)drawBeliefSequence(i);
+ if(atoning)drawAtoningPair(Math.max(0,i));
+ else drawBeliefSequence(i);
  schemaSlideCount((atoning?2*beliefs.length+7:4)+i);
  if(!overview){
    const note=document.createElement('p');
-   note.textContent=atoning?response:example;
+   note.textContent=atoning?'“'+response+'”':example;
    $('extra').append(note);
+ }
+ if(atoning&&overview){
+   const exampleNote=document.createElement('p');
+   exampleNote.textContent='For example, when I think “I am not good enough,” Love helps me accept care. Principle helps me ask what I can learn. I can seek support and take responsibility without grasping for approval or insisting that I am always right.';
+   $('extra').append(exampleNote);
  }
  action('Back',()=>{
    if(!overview){showBeliefReading(beliefReading,i-1);return}
@@ -962,6 +991,7 @@ function beliefReadingView(){
  });
  if(i<beliefs.length-1)action(overview?(atoning?'Begin':'Explore beliefs'):'Next belief',()=>showBeliefReading(beliefReading,i+1));
  else if(atoning)action('Finish tour',()=>{guidedBeliefs=false;setMode('full')});
+ if(!atoning&&i===5)action('Explore the shame halves',()=>showBeliefReading('halves',5));
  if(!atoning&&(overview||i===beliefs.length-1))action(overview?'Skip beliefs':'Continue to the full diagram',openFullSchema);
  action('Exit to the Agency Ring',()=>{mode='schema';chooseBelief(null)});
 }
@@ -1036,7 +1066,7 @@ function schemaView(){
  if(chosen){
    const i=schemaIndex;
    const passage=(title,body)=>{const p=document.createElement('p'),b=document.createElement('strong');b.textContent=title+' ';p.append(b,body);$('extra').append(p)};
-   if(!guidedBeliefs)passage('Atoning belief',beliefs[i][2]);
+   if(!guidedBeliefs)passage('Atoning belief','“'+beliefs[i][2]+'”');
    passage(positions[i].slice(0,2).join(' / ')+' — If I reject the belief.',beliefContrasts[i][0]);
    passage(vices[i].join(' / ')+' — If I take it as true.',beliefContrasts[i][1]);
    if(!guidedBeliefs)action('Previous belief',()=>chooseBelief((i+11)%12));
@@ -1253,8 +1283,7 @@ function render(){
  const close=mode==='schema'&&guidedBeliefs&&!schemaIntro&&schemaIndex!==null;
  $('wheel').setAttribute('viewBox',close?'119 1 202 124':'0 0 440 440');
  $('wheel').classList.toggle('beliefClose',close);
- const beliefCircle=mode==='schemaText'&&beliefReading==='belief';
- $('wheelStage').hidden=mode==='schemaText'&&!beliefCircle;
+ const beliefGraphic=mode==='schemaText';
  const launched=mode!=='poster';
  $('wheelStage').classList.toggle('launched',launched);
  $('wheelPoster').setAttribute('aria-hidden',String(launched));
@@ -1268,7 +1297,7 @@ function render(){
  $('wheel').removeAttribute('inert');
  $('wheel').classList.toggle('introduction',mode==='intro');
  $('wheel').classList.remove('primary-colors');
- $('wheel').classList.toggle('schema',mode==='schema'||mode==='orientation'||mode==='schemaTotal'||mode==='tour'||beliefCircle||(mode==='patterns'&&['recap','beliefs'].includes(patternPage)));
+ $('wheel').classList.toggle('schema',mode==='schema'||mode==='orientation'||mode==='schemaTotal'||mode==='tour'||beliefGraphic||(mode==='patterns'&&['recap','beliefs'].includes(patternPage)));
  $('wheel').classList.toggle('tilt',mode==='vice'&&!ringReady);$('wheel').classList.toggle('ring',mode==='vice'&&ringReady);$('guide').removeAttribute('d');
  const label=$('hubLabel');
  label.textContent=mode==='hub' && topic===foundationTopic ? '' : mode==='hub' && topic ? topic : 'Virtues';
@@ -1287,7 +1316,7 @@ function render(){
  if(mode==='patterns'){patternView();return}
  if(mode==='schemaTotal'){schemaTotalView();return}
  if(mode==='orientation'){orientationView();return}
- if(mode==='schemaText'){beliefReadingView();return}
+ if(mode==='schemaText'){if(beliefReading==='halves')shameHalvesView();else beliefReadingView();return}
  if(mode==='schema'){schemaView();return}
  if(mode==='vice'){viceView();return}
  if(mode==='hub'){
