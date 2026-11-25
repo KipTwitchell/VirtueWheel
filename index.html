@@ -960,9 +960,9 @@ function beliefReadingView(){
    if(atoning){mode='schema';chooseBelief(beliefs.length-1);return}
    mode='schema';schemaIntro=true;resumeIntroStage=3;render();
  });
- if(i<beliefs.length-1)action(overview?'Begin':'Next belief',()=>showBeliefReading(beliefReading,i+1));
+ if(i<beliefs.length-1)action(overview?(atoning?'Begin':'Explore beliefs'):'Next belief',()=>showBeliefReading(beliefReading,i+1));
  else if(atoning)action('Finish tour',()=>{guidedBeliefs=false;setMode('full')});
- if(!atoning&&(overview||i===beliefs.length-1))action(overview?'Skip to the full Shame Schema':'See the full Shame Schema',openFullSchema);
+ if(!atoning&&(overview||i===beliefs.length-1))action(overview?'Skip beliefs':'See the full Shame Schema',openFullSchema);
  action('Return to Shame Schema',()=>{mode='schema';chooseBelief(null)});
 }
 function schemaTotalView(){
