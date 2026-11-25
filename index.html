@@ -534,7 +534,8 @@ function finishAgencyIntro(){
  if(schemaLandingHalf!==null){
    const half=schemaLandingHalf;schemaLandingHalf=null;
    mode='patterns';patternOrigin='schema';showPattern('recap',half);
- }else render();
+ }else if(guidedBeliefs)showBeliefReading('belief',-1);
+ else render();
 }
 function schemaFromHalves(){
  guidedBeliefs=false;
@@ -612,6 +613,12 @@ function primaryViceDiagram(scene,cue){
    return shape('path',{d:'M'+point(88,i*30)+' L'+point(160,j*30),fill:'none',stroke:'#333','stroke-width':3,pathLength:1,'stroke-dasharray':'1 1'},scene);
  });
  if(showsComplements)word(0,181,'Dependence','#232923');
+ const recap=document.createElement('p');
+ if(showsComplements){
+   recap.hidden=true;
+   recap.textContent='Love → Principle → Pride · Faith → Humility → Fear · Hope → Honesty → Despair';
+   $('extra').append(recap);
+ }
  scene.append(layer);
  const progress=(ms,start,duration)=>Math.min(1,Math.max(0,(ms-start)/duration));
  const starts=showsComplements?[1500,4000,4900]:[0,1950];
@@ -632,7 +639,10 @@ function primaryViceDiagram(scene,cue){
      path.setAttribute('stroke-dashoffset',1-traces[k]);
      if(showsComplements){
        const fadeStart=starts[k]+drawTimes[k]+200;
-       path.setAttribute('opacity',1-progress(ms,fadeStart,500));
+       const fade=progress(ms,fadeStart,500);
+       path.setAttribute('opacity',1-fade);
+       path.style.display=fade===1?'none':'';
+       if(k===paths.length-1&&fade===1)recap.hidden=false;
      }
      labels[k].setAttribute('opacity',reveals[k]);
    });
@@ -861,6 +871,50 @@ function tourView(){
  });
  action('Return to wheel',()=>setMode('full'));
 }
+let beliefReading,readingIndex;
+function showBeliefReading(pass,index){
+ beliefReading=pass;readingIndex=index;setMode('schemaText');
+}
+function startBeliefRelationships(){
+ mode='schema';chooseBelief(0);
+}
+function beliefReadingView(){
+ const atoning=beliefReading==='atoning',i=readingIndex;
+ const overview=i<0;
+ const [name,belief,response]=beliefs[Math.max(0,i)];
+ $('heading').textContent=overview?(atoning?'Atoning beliefs':'What are shame beliefs?'):name;
+ $('caption').textContent=overview
+   ? atoning
+     ? 'An atoning belief offers a way to face a painful thought without letting it have the last word. Read each response alongside the belief it addresses.'
+     : 'A shame belief is a conclusion we can come to about who we are, where we belong, or whether we can change. The Shame Schema lays out two sequences. Read them as possible steps in a pattern.'
+   : '“'+belief+'”';
+ if(overview&&!atoning){
+   [['Childlike',beliefs.slice(0,6)],['Mature',beliefs.slice(6)]].forEach(([title,group])=>{
+     const label=document.createElement('strong'),line=document.createElement('p');
+     label.textContent=title;
+     line.textContent=group.map(([name])=>name).join(' → ');
+     $('extra').append(label,line);
+   });
+ }
+ if(!overview){
+   tourCount((atoning?'Atoning belief ':'Shame belief ')+(i+1)+' of '+beliefs.length);
+   const note=document.createElement('p');
+   if(atoning)note.textContent=response;
+   else if(i===5)note.textContent='This is the last belief in the childlike sequence. The next belief begins the mature sequence.';
+   else if(i<beliefs.length-1)note.textContent='Next in this sequence: '+beliefs[i+1][0]+'.';
+   if(note.textContent)$('extra').append(note);
+ }
+ action('Back',()=>{
+   if(!overview){showBeliefReading(beliefReading,i-1);return}
+   if(atoning){mode='schema';chooseBelief(beliefs.length-1);return}
+   if(fromOverviewTour){mode='schema';schemaIntro=true;resumeIntroStage=3;render()}
+   else {mode='schema';chooseBelief(null)}
+ });
+ if(i<beliefs.length-1)action(overview?'Begin':'Next belief',()=>showBeliefReading(beliefReading,i+1));
+ else if(atoning)action('Finish tour',()=>{guidedBeliefs=false;setMode('full')});
+ else action('Relate the beliefs to the wheel',startBeliefRelationships);
+ action('Return to Shame Schema',()=>{mode='schema';chooseBelief(null)});
+}
 function orientBeliefs(){
  schemaIndex=0;setMode('orientation');
 }
@@ -901,27 +955,27 @@ function schemaView(){
    playAgencyIntro(scene);return;
  }
  drawBeliefRing(scene,guidedBeliefs&&chosen?schemaIndex:0);
- if(guidedBeliefs&&chosen) tourCount('Belief '+(schemaIndex+1)+' of '+beliefs.length);
+ if(guidedBeliefs&&chosen) tourCount('On the wheel · Belief '+(schemaIndex+1)+' of '+beliefs.length);
  $('heading').textContent=chosen?beliefs[schemaIndex][0]:'The Agency Ring';
  $('caption').textContent=chosen?'“'+beliefs[schemaIndex][1]+'”':'The white circle is the middle floor seen from above. Choose a belief on the ring or begin the guided path.';
  if(chosen){
    const i=schemaIndex;
    const passage=(title,body)=>{const p=document.createElement('p'),b=document.createElement('strong');b.textContent=title+' ';p.append(b,body);$('extra').append(p)};
-   passage('Atoning belief',beliefs[i][2]);
-   passage('On the wheel',positions[i].slice(0,2).join(' / ')+' · '+vices[i].join(' / '));
+   if(!guidedBeliefs)passage('Atoning belief',beliefs[i][2]);
+   passage('Virtue',positions[i].slice(0,2).join(' / '));
+   passage('Vice',vices[i].join(' / '));
    if(!guidedBeliefs)action('Previous belief',()=>chooseBelief((i+11)%12));
    else action('Back',()=>{
      if(i===1){orientBeliefs();return}
      if(i>0){chooseBelief(i-1);return}
-     if(!fromOverviewTour){chooseBelief(null);return}
-     resumeIntroStage=3;schemaIntro=true;render();
+     showBeliefReading('belief',beliefs.length-1);
    });
-   if(guidedBeliefs&&i===beliefs.length-1)action('Finish tour',()=>{guidedBeliefs=false;setMode('full')});
+   if(guidedBeliefs&&i===beliefs.length-1)action('Continue to atoning beliefs',()=>showBeliefReading('atoning',-1));
    else action('Next belief',()=>{if(guidedBeliefs&&i===0)orientBeliefs();else chooseBelief((i+1)%12)});
    action('Return to Shame Schema',()=>chooseBelief(null));
  }else{
    const p=document.createElement('p');p.textContent='The guided path begins with Love. The child-like half draws on Harper and Hoopes. Kip and Abby propose the corresponding mature half.';$('extra').append(p);
-   action('Begin guided path',()=>{fromOverviewTour=false;guidedBeliefs=true;chooseBelief(0)});
+   action('Begin guided path',()=>{fromOverviewTour=false;guidedBeliefs=true;showBeliefReading('belief',-1)});
    action('Explore Agency Ring halves',enterPatterns);
  }
  action(schemaOrigin==='vice'?'Back to vice ring':'Back to virtue wheel',()=>{mode=schemaOrigin;render()});
@@ -1125,6 +1179,7 @@ function render(){
  const close=mode==='schema'&&guidedBeliefs&&!schemaIntro&&schemaIndex!==null;
  $('wheel').setAttribute('viewBox',close?'119 1 202 124':'0 0 440 440');
  $('wheel').classList.toggle('beliefClose',close);
+ $('wheelStage').hidden=mode==='schemaText';
  const launched=mode!=='poster';
  $('wheelStage').classList.toggle('launched',launched);
  $('wheelPoster').setAttribute('aria-hidden',String(launched));
@@ -1156,6 +1211,7 @@ function render(){
  if(mode==='neighbors'){comparisonView(i);return}
  if(mode==='patterns'){patternView();return}
  if(mode==='orientation'){orientationView();return}
+ if(mode==='schemaText'){beliefReadingView();return}
  if(mode==='schema'){schemaView();return}
  if(mode==='vice'){viceView();return}
  if(mode==='hub'){
