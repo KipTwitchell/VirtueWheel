@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Virtue Wheel Self-Assessment</title>
+<style>
+body{margin:0;background:#faf7ee;color:#233c38;font:17px/1.5 system-ui,sans-serif}
+main{max-width:720px;margin:auto;padding:24px 20px 48px}
+h1{font:clamp(32px,7vw,48px) Georgia,serif}
+a{color:inherit}button{font:inherit;padding:.65em 1em;color:white;background:#24453b;border:1px solid #24453b;border-radius:8px;cursor:pointer}
+textarea{box-sizing:border-box;width:100%;min-height:16rem;padding:14px;border:1px solid #88988f;border-radius:8px;background:#fffdf9;color:inherit;font:inherit}
+footer{margin-top:30px;font-size:.85rem}#status{min-height:1.5em}
+</style>
+<main>
+<a href="./">Back to the Virtue Wheel</a>
+<h1>Virtue Wheel Self-Assessment</h1>
+<p>Copy the prompt below and paste it into a new chat with your preferred AI. It includes all twelve virtues and their complements. You can pause between groups and ask for a recap to bring to a later chat.</p>
+<p>Use examples you’re comfortable sharing with your AI provider. Leave out names and identifying details.</p>
+<button type="button" id="copy">Copy assessment prompt</button>
+<p id="status" role="status"></p>
+<label for="prompt"><strong>Assessment prompt</strong></label>
+<textarea id="prompt" readonly>
+Guide me through a self-assessment using the Virtue Wheel. Ask one question at a time. Work through all twelve virtues below in order. Let me pause, skip a virtue, or say I have no recent example.
+
+For each virtue, ask about a recent opportunity to practice it. Help me distinguish what happened, what I did, and what happened afterward. Ask what the complementary virtue would have contributed in that same situation. If my example is vague, ask one brief follow-up. Treat hypothetical answers as intentions and examples I report as self-reported evidence. When I have only one example, describe that instance. When I have several, look for a pattern across them. Avoid grades, rankings, diagnoses, and judgments about anyone's character.
+
+Primary virtues
+• Love. When did I respond to someone's needs while respecting a fair boundary?
+• Hope. When did I look for a realistic possibility after a setback?
+• Faith. When did I act on a commitment or justified trust while the outcome was still uncertain?
+
+Secondary virtues
+• Principle. When did I apply a fair standard, take responsibility for my part, and keep my judgment proportionate to the evidence?
+• Honesty. When did I acknowledge an inconvenient fact and let it inform my plan?
+• Humility. When did I consider a correction and change my understanding or behavior in response?
+
+Tertiary virtues
+• Meekness. When did I respond gently under pressure while still making my concern known?
+• Courage. When did I speak or act despite a cost because something worth protecting was at stake?
+• Patience. When did I give something the time it needed, and how did I decide whether it was time to act?
+• Diligence. When did I follow through on work that mattered even after it stopped feeling urgent?
+• Joy. When did I welcome something good or share in another person's happiness?
+• Reverence. When did I treat something someone held sacred or deeply important with care?
+
+Complements across the wheel
+Love ↔ Principle
+Hope ↔ Honesty
+Faith ↔ Humility
+Meekness ↔ Courage
+Patience ↔ Diligence
+Joy ↔ Reverence
+
+Keep Principle and Humility distinct. If my supervisor asks me to revise one paragraph, Humility helps me hear the feedback and learn what was unclear. Principle helps me apply a fair standard to the paragraph, revise what I am responsible for, and keep the judgment in proportion to the evidence. Love helps me treat myself and the supervisor with care. Ask which of these actually showed up in my response.
+
+At the end of each group, recap the examples and identify gaps. At the end of the assessment, summarize each virtue with one observed action, one question about its complement, and any gaps in my evidence. Help me choose one practice for the coming week and one observable sign that would tell me whether I followed through. Begin by asking about Love.
+</textarea>
+<footer>© 2026 Kip M. Twitchell and Abby Twitchell Platt. All rights reserved.</footer>
+</main>
+<script>
+const promptText = document.getElementById('prompt');
+const status = document.getElementById('status');
+document.getElementById('copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(promptText.value.trim());
+    status.textContent = 'Copied. Paste the prompt into your AI chat.';
+  } catch {
+    promptText.focus();
+    promptText.select();
+    status.textContent = 'The prompt is selected. Use your device’s Copy command.';
+  }
+});
+</script>
+</html>
