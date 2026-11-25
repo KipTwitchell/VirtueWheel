@@ -583,30 +583,42 @@ function primaryViceDiagram(scene,cue){
    inner.push(shape('path',{d:sector(i,144),fill:row[2]},g));
  });
  const layer=shape('g',{},scene);
- function word(i,r,name,ink){
+ function word(i,r,name,ink,parent=layer){
    const [x,y]=point(r,i*30);
-   return shape('text',{x,y:y+5,'text-anchor':'middle','font-size':17,'font-weight':600,fill:ink},layer).textContent=name;
+   return shape('text',{x,y:y+5,'text-anchor':'middle','font-size':17,'font-weight':600,fill:ink},parent).textContent=name;
  }
- const pairs=cue==='fear-despair'?[[8,'Faith',2,'Fear'],[4,'Hope',10,'Despair']]:[[0,'Love',6,'Pride']];
- const paths=pairs.map(([i,name,j,vice])=>{
-   word(i,109,name,positions[i][3]);word(j,181,vice,positions[i][3]);
+ const showsComplements=cue==='opposite-path';
+ const faithHope=[[8,'Faith',2,'Fear','Humility'],[4,'Hope',10,'Despair','Honesty']];
+ const love=[0,'Love',6,'Pride','Principle'];
+ const pairs=showsComplements?[love,...faithHope]:cue==='fear-despair'?faithHope:[love];
+ const labels=[];
+ const paths=pairs.map(([i,name,j,vice,complement])=>{
+   const group=shape('g',{},layer);labels.push(group);
+   word(i,109,name,positions[i][3],group);
+   word(j,181,vice,positions[i][3],group);
+   if(showsComplements)word(j,109,complement,positions[j][3],group);
    return shape('path',{d:'M'+point(88,i*30)+' L'+point(160,j*30),fill:'none',stroke:'#333','stroke-width':3,pathLength:1,'stroke-dasharray':'1 1'},scene);
  });
- if(cue==='opposite-path'){
-   word(6,109,'Principle',positions[6][3]);
-   word(0,181,'Dependence','#232923');
-   scene.append(layer);
- }
- playWhileReading(4800,ms=>{
-   const across=cue==='opposite-path'?Math.min(1,Math.max(0,(ms-1500)/1800)):Math.min(1,ms/1600);
+ if(showsComplements)word(0,181,'Dependence','#232923');
+ scene.append(layer);
+ const progress=(ms,start,duration)=>Math.min(1,Math.max(0,(ms-start)/duration));
+ playWhileReading(showsComplements?6300:4800,ms=>{
+   const starts=showsComplements?[1500,4000,4900]:[0,1950];
+   const traces=pairs.map((_,k)=>progress(ms,starts[k],showsComplements?(k===0?1800:850):1500));
+   const reveals=pairs.map((_,k)=>showsComplements&&k>0?progress(ms,starts[k],650):1);
    rings.forEach((node,i)=>{
-     const which=pairs.findIndex(pair=>pair[2]===i);
-     let emphasis=which<0?0:Math.min(1,Math.max(0,(ms-which*1950)/1300));
-     if(cue==='opposite-path')emphasis=i===0?1-.65*across:i===6?across:0;
+     const target=pairs.findIndex(pair=>pair[2]===i);
+     const emphasis=showsComplements
+       ? i===0?1-.65*traces[0]:target<0?0:traces[target]
+       : target<0?0:progress(ms,starts[target],1300);
      node.setAttribute('opacity',.13+.87*emphasis);
-     inner[i].setAttribute('opacity',pairs.some(pair=>pair[0]===i)||cue==='opposite-path'&&i===6?.94:.17);
+     const source=pairs.findIndex(pair=>pair[0]===i||(showsComplements&&pair[2]===i));
+     inner[i].setAttribute('opacity',source<0?.17:.17+.83*reveals[source]);
    });
-   paths.forEach((path,k)=>path.setAttribute('stroke-dashoffset',1-(cue==='opposite-path'?across:Math.min(1,Math.max(0,(ms-k*1950)/1500)))));
+   paths.forEach((path,k)=>{
+     path.setAttribute('stroke-dashoffset',1-traces[k]);
+     labels[k].setAttribute('opacity',reveals[k]);
+   });
  });
 }
 function chemistrySlide(scene,cue){
