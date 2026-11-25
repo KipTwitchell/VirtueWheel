@@ -454,43 +454,55 @@ function drawBeliefRing(scene,focus=0){
  }
 }
 function playAgencyIntro(scene){
- const layers=shape('g',{},scene), floors=[];
- const cone=shape('path',{fill:'#afbeac','fill-opacity':.19,stroke:'#98a595'},layers);
- for(const [title,fill] of [['Virtues','#d7e8d8'],['Vices','#dfddd7']]){
-   const floor=shape('g',{},layers);floors.push(floor);
-   shape('ellipse',{cx:220,cy:220,rx:182,ry:39,fill,stroke:'#849387'},floor);
-   shape('text',{x:220,y:227,'text-anchor':'middle','font-family':'Georgia','font-size':22},floor).textContent=title;
- }
- const plane=shape('ellipse',{cx:220,cy:220,rx:182,ry:44,fill:'#fffdf9',stroke:'#7e9280','stroke-width':2},scene);
- for(const [title,y,size] of [['Agency Ring',216,24],['Innocence at birth',241,16]]){
-   shape('text',{x:220,y,'text-anchor':'middle','font-family':'Georgia','font-size':size,fill:'#203b36'},scene).textContent=title;
- }
- function trace(x,end,color){
-   const group=shape('g',{stroke:color,'stroke-width':4,fill:'none','stroke-linecap':'round'},scene);
-   const stem=shape('path',{},group),tip=shape('path',{},group);
-   return progress=>{
-     const y=220+(end-220)*progress;
-     group.style.opacity=progress;
-     stem.setAttribute('d','M'+x+' 220V'+y);
-     const wing=end<220?7:-7;
-     tip.setAttribute('d','M'+(x-5)+' '+(y+wing)+' L'+x+' '+y+' L'+(x+5)+' '+(y+wing));
-   };
- }
- const up=trace(124,118,'#346345'),down=trace(316,325,'#625363');
- const clamp=n=>Math.max(0,Math.min(1,n));
+ const overview=schemaIntro==='overview';
+ const floors=[
+   {name:'Vices',y:318,tilted:209,flat:215,fill:'#d5d0c9'},
+   {name:'Agency',y:220,tilted:170,flat:184,fill:'#fffdf9'},
+   {name:'Virtues',y:116,tilted:145,flat:127,fill:'#f1eee4'}
+ ].map(floor=>{
+   const group=shape('g',{},scene);
+   shape('circle',{cx:220,cy:220,r:215,fill:floor.fill,stroke:'#52685e','stroke-width':2},group);
+   if(floor.name==='Virtues'){
+     positions.forEach((row,i)=>shape('path',{d:sector(i,212),fill:row[2],opacity:.67},group));
+   }
+   for(let i=0;i<12;i++){
+     const [x,y]=point(214,i*30),[innerX,innerY]=point(173,i*30);
+     shape('path',{d:'M'+innerX+' '+innerY+' L'+x+' '+y,stroke:'#52685e','stroke-opacity':.5},group);
+   }
+   if(floor.name==='Virtues')shape('circle',{cx:220,cy:220,r:72,fill:'#fffdf9'},group);
+   const label=shape('text',{x:220,y:floor.y+6,'text-anchor':'middle','font-family':'Georgia','font-size':19,fill:'#233c38'},scene);
+   label.textContent=floor.name;
+   return {...floor,group,label};
+ });
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const stops=[1600,3200,4500];
  let stage=0,busy=false;
+ const clamp=n=>Math.max(0,Math.min(1,n));
  function draw(ms){
-   const rise=clamp(ms/1600),drop=clamp((ms-1600)/1600),fold=clamp((ms-3200)/1300);
-   const top=-102*rise*(1-fold),bottom=105*drop*(1-fold);
-   floors[0].setAttribute('transform','translate(0 '+top+')');
-   floors[1].setAttribute('transform','translate(0 '+bottom+')');
-   floors[0].style.opacity=rise*(1-fold);floors[1].style.opacity=drop*(1-fold);
-   cone.setAttribute('d','M38 '+(220+top)+' L220 '+(220+bottom)+' L402 '+(220+top)+' Z');
-   cone.style.opacity=rise*(1-fold);
-   up(rise*(1-fold));down(drop*(1-fold));
-   plane.setAttribute('rx',182+28*fold);plane.setAttribute('ry',44+166*fold);
+   const agency=overview?0:clamp(ms/1050);
+   const turn=overview?0:clamp((ms-2200)/2300);
+   const settle=turn*turn*(3-2*turn);
+   floors.forEach(({name,y,tilted,flat,group,label})=>{
+     const radius=tilted+(flat-tilted)*settle;
+     const centerY=y+(220-y)*settle;
+     const scale=radius/215;
+     const tilt=.25+.75*settle;
+     group.setAttribute('transform','translate(220 '+centerY+') scale('+scale+' '+scale*tilt+') translate(-220 -220)');
+     group.setAttribute('opacity',name==='Agency'?agency:1);
+     label.setAttribute('opacity',(name==='Agency'?agency:1)*(1-settle));
+   });
+   if(!overview)centerLabel.setAttribute('opacity',settle);
+ }
+ const centerLabel=shape('text',{x:220,y:225,'text-anchor':'middle','font-family':'Georgia','font-size':15,fill:'#233c38',opacity:0},scene);
+ centerLabel.textContent='Innocence at birth';
+ if(overview){
+   draw(0);
+   action('Back',()=>{
+     if(guidedBeliefs&&fromOverviewTour){schemaIntro=false;guidedBeliefs=false;setMode('tour')}
+     else setMode(schemaOrigin);
+   });
+   action('Next',()=>{schemaIntro=true;render()});
+   return;
  }
  function end(){cancelAnimationFrame(frame);finishAgencyIntro()}
  function advance(){
@@ -508,13 +520,13 @@ function playAgencyIntro(scene){
    tick(start);
  }
  if(guidedBeliefs&&fromOverviewTour){
-   action('Back',()=>{schemaIntro=false;guidedBeliefs=false;setMode('tour')});
+   action('Back',()=>{schemaIntro='overview';render()});
    action('Next',end);
    if(resumeIntroStage){resumeIntroStage=0;draw(stops[stops.length-1])}
    else playWhileReading(stops[stops.length-1],draw);
    return;
  }
- guideControls(advance,end);advance();
+ guideControls(advance,end);action('Back',()=>{schemaIntro='overview';render()});advance();
 }
 let schemaLandingHalf=null;
 function finishAgencyIntro(){
@@ -528,7 +540,7 @@ function schemaFromHalves(){
  guidedBeliefs=false;
  const half=patternChoice;
  schemaOrigin='full';schemaIndex=null;
- schemaLandingHalf=half;schemaIntro=true;mode='schema';render();
+ schemaLandingHalf=half;schemaIntro='overview';mode='schema';render();
 }
 
 let schemaOrigin, schemaIndex, schemaIntro=false;
@@ -538,7 +550,7 @@ function enterSchema(){
  schemaIndex=mode==='vice'?viceIndex:angle===null?null:((angle%12)+12)%12;
  clearTimeout(revealTimer);
  if(mode==='vice')ringReady=true;
- schemaIntro=true;mode='schema';render();
+ schemaIntro='overview';mode='schema';render();
 }
 function chooseBelief(index){if(index===null)guidedBeliefs=false;schemaIndex=index;render()}
 let guidedBeliefs=false,slide=0,fromOverviewTour=false,resumeIntroStage=0;
@@ -840,7 +852,7 @@ function tourView(){
  const last=slide===slides.length-1;
  action(last?'Continue to Shame Schema':'Next',()=>{
    if(!last){slide++;render();return}
-   fromOverviewTour=true;resumeIntroStage=0;guidedBeliefs=true;schemaIndex=0;schemaOrigin='full';schemaIntro=true;mode='schema';render();
+   fromOverviewTour=true;resumeIntroStage=0;guidedBeliefs=true;schemaIndex=0;schemaOrigin='full';schemaIntro='overview';mode='schema';render();
  });
  action('Return to wheel',()=>setMode('full'));
 }
@@ -875,8 +887,11 @@ function schemaView(){
  const scene=$('schemaScene');scene.replaceChildren();
  const chosen=schemaIndex!==null;
  if(schemaIntro){
-   $('heading').textContent='Innocence at birth';
-   $('caption').textContent='We begin on the white middle plane. From this place of agency, choices can lead upward toward virtue or downward toward vice.';
+   const overview=schemaIntro==='overview';
+   $('heading').textContent=overview?'The Shame Schema':'Innocence at birth';
+   $('caption').textContent=overview
+     ? 'Remember the vice wheel below the virtues. Viewed from above, its wider rim surrounds them. The Shame Schema places agency between those floors and explores how beliefs about ourselves can shape the choices we make.'
+     : 'We begin in innocence on the white middle floor of agency. From there we can move toward virtue above or vice below. As the three floors turn to face us, agency becomes the ring between the virtues and the wider rim of vices.';
 
    playAgencyIntro(scene);return;
  }
