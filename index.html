@@ -273,6 +273,26 @@ function playHubScene(subject=topic, continuous=false){
         if(ms>3650)$('outline').setAttribute('d',rimPath(48*(1-(ms-3650)/1000)));
       });
     }else animate(3200,draw);
+  }else if(subject==='Temperance'&&continuous){
+    const [startX,startY]=point(122,90);
+    const [endX,endY]=point(122,210);
+    const path=shape('path',{
+      d:'M '+startX+' '+startY+' Q 255 220 220 220 Q 186 224 '+endX+' '+endY,
+      fill:'none',stroke:'#233c38','stroke-width':2,'stroke-dasharray':'3 5'
+    },overlay);
+    const marker=shape('circle',{r:7,fill:'#172f2b',stroke:'white','stroke-width':3},overlay);
+    const status=shape('text',{x:220,y:249,'text-anchor':'middle','font-size':13,fill:'#233c38'},overlay);
+    const firstLeg=shape('path',{d:'M '+startX+' '+startY+' Q 255 220 220 220',fill:'none',visibility:'hidden'},overlay);
+    const midpoint=firstLeg.getTotalLength();
+    const remaining=path.getTotalLength()-midpoint;
+    const travel=(distance,elapsed,duration)=>distance*Math.min(1,Math.max(0,elapsed/duration));
+    playWhileReading(6500,ms=>{
+      const distance=travel(midpoint,ms-1400,1250)+travel(remaining,ms-3900,2100);
+      const location=path.getPointAtLength(distance);
+      marker.setAttribute('cx',location.x);marker.setAttribute('cy',location.y);
+      const caption=ms<1400?'Waiting patiently':ms<2650?'Considering':ms<3900?'Pausing before acting':'Taking action';
+      if(status.textContent!==caption)status.textContent=caption;
+    });
   }else if(subject==='Temperance'){
     const path=shape('path',{d:'M 94 88 Q 154 17 250 33 L 157 51 Q 240 5 343 85 L 281 47 Q 381 119 360 160 C 350 181 306 182 280 202 S 239 211 232 224 C 220 242 243 253 265 247',fill:'none',stroke:'#233c38','stroke-width':2,'stroke-dasharray':'3 5'},overlay);
     const marker=shape('circle',{r:7,fill:'#172f2b',stroke:'white','stroke-width':3},overlay);
