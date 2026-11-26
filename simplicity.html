@@ -1470,26 +1470,44 @@ function layerExplorer(i){
  $('hubLabel').textContent='';
  $('hubTarget').style.pointerEvents='none';
  $('heading').textContent='Wheel layers';
- $('caption').textContent='Show the layers you want. Double-tap an item to lock it, then tap another item to compare.';
- const rows={
-   mercy:[48,75,'#f5ead7'],virtue:[77,131,null],schema:[133,160,'#e9e5d6'],
-   vice:[162,188,'#dadfd8'],justice:[190,209,'#303831']
- };
- for(const [layer,[inner,outer,fill]] of Object.entries(rows)){
+ const expanded=visibleLayers.has('vice');
+ $('caption').textContent='Double-tap any visible item to lock it. Then tap another to compare.';
+ const rings={virtue:expanded?[61,131]:[61,208],schema:[133,163],vice:[165,208]};
+ for(const [layer,[inner,outer]] of Object.entries(rings)){
    if(visibleLayers.has(layer))positions.forEach((position,index)=>{
-     const tint=layer==='mercy'?'color-mix(in srgb, '+position[2]+' 23%, white)':layer==='justice'?'color-mix(in srgb, '+position[2]+' 25%, black)':fill;
-     drawLayerItem(scene,layer,index,inner,outer,tint||position[2]);
+     const fill=layer==='virtue'?position[2]:layer==='schema'?'#e9e5d6':'#dadfd8';
+     drawLayerItem(scene,layer,index,inner,outer,fill);
    });
  }
  if(visibleLayers.has('hub'))drawLayerItem(scene,'hub',null,0,0,'#fffdf6');
- const controls=explorationRow('Show or hide wheel layers');
- for(const [layer,name] of Object.entries(layerNames))explorationButton(controls,name,()=>{
-   lastLayerTap=null;
-   if(visibleLayers.has(layer)){visibleLayers.delete(layer);if(layerSelection?.layer===layer)layerSelection=null;}
-   else visibleLayers.add(layer);
-   render();
-   [...$('extra').querySelectorAll('button')].find(button=>button.textContent===name)?.focus({preventScroll:true});
- },visibleLayers.has(layer));
+ if(expanded){
+   const index=layerSelection?.index??layerAnchor?.index??i;
+   for(const [layer,x] of [['mercy',48],['justice',392]]){
+     const item={layer,index}, locked=sameLayerItem(layerAnchor,item);
+     const group=shape('g',{role:'button',tabindex:0,class:'exploreChoice','aria-label':layerTitle(item)+(locked?', locked':'')},scene);
+     shape('rect',{x:x-41,y:397,width:82,height:36,rx:13,fill:layer==='justice'?'#303831':'#fffdf6',stroke:locked?'#398665':'#677a70','stroke-width':locked?4:1},group);
+     shape('text',{x,y:420,'text-anchor':'middle','font-size':14,fill:layer==='justice'?'white':'#233c38','pointer-events':'none'},group).textContent=layerNames[layer];
+     group.onclick=()=>chooseLayerItem(layer,index,true);
+     group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);}};
+   }
+ }
+ const controls=explorationRow('Expand the wheel');
+ const toggle=(layer,label)=>{
+   const button=explorationButton(controls,label,()=>{
+     lastLayerTap=null;
+     if(visibleLayers.has(layer)){
+       visibleLayers.delete(layer);
+       if(layer==='vice')visibleLayers.delete('schema');
+       if(layerSelection&&(['mercy','justice'].includes(layerSelection.layer)?!visibleLayers.has('vice'):!visibleLayers.has(layerSelection.layer)))layerSelection=null;
+     }else visibleLayers.add(layer);
+     render();
+     $('extra').querySelector('[data-wheel-layer="'+layer+'"]')?.focus({preventScroll:true});
+   },visibleLayers.has(layer));
+   button.dataset.wheelLayer=layer;
+ };
+ toggle('vice',expanded?'Hide vice wheel':'Expand to vice wheel');
+ if(expanded)toggle('schema',visibleLayers.has('schema')?'Hide Shame Schema':'Show Shame Schema in the gap');
+ toggle('hub',visibleLayers.has('hub')?'Hide hub':'Show hub');
  const readout=$('extra');
  const present=(item,prefix)=>{
    const line=document.createElement('p');
@@ -1498,7 +1516,7 @@ function layerExplorer(i){
    line.append(heading,document.createElement('br'),layerText(item));
    readout.append(line);
  };
- if(layerAnchor)present(layerAnchor,visibleLayers.has(layerAnchor.layer)?'Locked · ':'Locked · hidden layer · ');
+ if(layerAnchor)present(layerAnchor,(visibleLayers.has(layerAnchor.layer)||expanded&&['mercy','justice'].includes(layerAnchor.layer))?'Locked · ':'Locked · hidden layer · ');
  if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection,'');
  if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
    const question=document.createElement('p');
@@ -1591,7 +1609,7 @@ function explorationView(i){
  }else if(comparing)detail.textContent=lens===previous||lens===next?neighborExamples[lens===previous?previous:i]:'What would '+virtueNames[lens]+' add to how you respond in this situation?';
  else if(tint||shade)detail.textContent=tint?mercy:justice;
  else if(lens)detail.textContent=words.find(([label])=>label===lens)?.[1]||'';
- else detail.textContent=locked?'Tap another slice to compare it with '+name+'.':'Try Mercy or Justice, or double-tap '+name+' to lock it.';
+ else detail.textContent=locked?'Tap another slice to compare it with '+name+'.':'Explore a related word, or double-tap '+name+' to lock it.';
  $('extra').append(detail);
  [...$('sectors').children].forEach((group,k)=>group.style.opacity=k===i||comparing&&k===comparingIndex?1:.58);
  if(tint||shade){
@@ -1600,13 +1618,9 @@ function explorationView(i){
    shape('path',{d:sector(i),fill:mix,opacity:.62},$('motion'));
  }
  const controls=$('explorationControls');
- wheelChoice(controls,0,0,'Mercy',()=>select(lens==='Mercy'?null:'Mercy'),{width:76});
- wheelChoice(controls,198,i*30,'Justice',()=>select(lens==='Justice'?null:'Justice'),{width:78,dark:true});
  $('hubLabel').textContent='';
  const wordsRow=explorationRow('Related words and color');
  words.forEach(([label])=>explorationButton(wordsRow,label,()=>select(label),lens===label));
- explorationButton(wordsRow,'Mercy',()=>select('Mercy'),tint);
- explorationButton(wordsRow,'Justice',()=>select('Justice'),shade);
  if(explorePanel==='compare'){
    const compare=explorationRow('Compare with another virtue');
    explorationButton(compare,virtueNames[previous],()=>select(previous),lens===previous);
@@ -1622,7 +1636,7 @@ function explorationView(i){
  }
  if(explorePanel==='guides')guideMenu(i);
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
- action('Wheel layers',()=>openExplorePanel('layers'));
+ action('Expand the wheel',()=>openExplorePanel('layers'));
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
  action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
  action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
@@ -1630,7 +1644,7 @@ function explorationView(i){
 function exploreLanding(){
  $('heading').textContent='Explore the wheel';
  $('caption').textContent='Tap a virtue to explore. Double-tap to lock it in place.';
- action('Wheel layers',()=>{angle=0;openExplorePanel('layers')});
+ action('Expand the wheel',()=>{angle=0;openExplorePanel('layers')});
  if(explorePanel==='guides')guideMenu(null);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
 }
