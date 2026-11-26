@@ -60,6 +60,7 @@
 #schemaScene [role=button]:focus-visible rect{stroke:#173b2f;stroke-width:3}
 .exploreChoice{cursor:pointer}.exploreChoice:focus-visible>:first-child{stroke:#152b24;stroke-width:4}#sectors>g{cursor:pointer}
 #wheelStage{margin-block:8px}
+#sectors{touch-action:manipulation}
 .explorationDetail{margin-block:.65em}
 .explorationRow{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin:.7em 0}
 .explorationRow button{padding:5px 11px;background:transparent}
@@ -85,7 +86,7 @@ function point(r,a){const t=a*Math.PI/180;return [220+r*Math.sin(t),220-r*Math.c
 function labelAngle(i){const a=i*30;return a>90&&a<270?a-180:a}
 function sector(i,r=209){let a=i*30;return 'M220 220 L'+point(r,a-15)+' A'+r+' '+r+' 0 0 1 '+point(r,a+15)+' Z'}
 positions.forEach(([a,b,color,ink],i)=>{const g=shape('g',{class:'segment'},$('sectors'));
- shape('path',{d:sector(i),fill:color},g);const [x,y]=point(158,i*30);for(const [j,line] of [a,b].entries())shape('text',{x,y:y-2+j*14,transform:'rotate('+labelAngle(i)+' '+x+' '+y+')','text-anchor':'middle','font-family':'system-ui','font-size':12,fill:ink},g).textContent=line;g.onclick=()=>{if(mode==='shades')chooseShade(i);else if(mode==='words'){wordIndex=i;render()}else if(mode==='vice')selectPair(i);else if(mode==='full'){const active=angle===null?null:(angle+120)%12;const neighbor=active!==null&&[(active+11)%12,(active+1)%12].includes(i);if(neighbor&&explorationLens!==i)exploreSlice(active,i);else{if(i!==active)explorePanel='';exploreSlice(i)}}}});
+ shape('path',{d:sector(i),fill:color},g);const [x,y]=point(158,i*30);for(const [j,line] of [a,b].entries())shape('text',{x,y:y-2+j*14,transform:'rotate('+labelAngle(i)+' '+x+' '+y+')','text-anchor':'middle','font-family':'system-ui','font-size':12,fill:ink},g).textContent=line;g.onclick=()=>{if(mode==='shades')chooseShade(i);else if(mode==='words'){wordIndex=i;render()}else if(mode==='vice')selectPair(i);else if(mode==='full')tapExploreSlice(i)}});
 const primaryLabels=[[0,'Red','Love'],[4,'Yellow','Hope'],[8,'Blue','Faith']].map(([i,colorName,virtueName])=>{
  const angle=i*30, [x,y]=point(145,angle);
  const slice=shape('g',{},$('primaryOpening'));
@@ -138,10 +139,10 @@ function action(label,fn,group,icon){
  section.lastElementChild.append(b);
 }
 
-function setMode(next){clearTimeout(timer);mode=next;open=false;if(next==='covered' && angle===null)angle=3;render()}
+function setMode(next){clearTimeout(timer);recentSliceTap=null;if(next==='covered')lockedVirtue=null;mode=next;open=false;if(next==='covered' && angle===null)angle=3;render()}
 function step(dir){angle+=dir;open=false;render()}
 function toggle(){open=!open;render()}
-function replay(){phase=0;angle=null;explorePanel='';setMode('intro')}
+function replay(){phase=0;angle=null;lockedVirtue=null;recentSliceTap=null;explorePanel='';setMode('intro')}
 let returnMode, topic, frame;
 const foundationTopic='Knowledge, Wisdom and Obedience';
 const attributes = {
@@ -1371,6 +1372,27 @@ function shadesView(){
 
 
 let explorationLens=null;
+let lockedVirtue=null;
+let recentSliceTap=null;
+
+function toggleVirtueLock(index){
+ lockedVirtue=lockedVirtue===index?null:index;
+ recentSliceTap=null;
+ exploreSlice(index);
+}
+function tapExploreSlice(index,allowDoubleTap=true){
+ const now=performance.now();
+ const doubleTap=allowDoubleTap&&recentSliceTap?.index===index&&now-recentSliceTap.time<360;
+ if(doubleTap){toggleVirtueLock(index);return}
+ recentSliceTap=allowDoubleTap?{index,time:now}:null;
+ if(lockedVirtue!==null){
+   const lens=index===lockedVirtue?null:index===(lockedVirtue+6)%12?'complement':index;
+   exploreSlice(lockedVirtue,lens);
+   return;
+ }
+ explorePanel='';
+ exploreSlice(index);
+}
 const explorationWords={
  0:[['Kindness','Notice a need and respond with a small, specific act of care.'],['Compassion','Let your understanding of someone’s difficulty shape the help you offer.']],
  3:[['Waiting','Give an effort the time it needs before stepping in.'],['Calm','Stay steady while the outcome is still uncertain.']]
@@ -1448,21 +1470,22 @@ function explorationView(i){
  const [word,situation,justice,mercy]=expressions[i];
  const words=explorationWords[i]||[[word,situation]];
  const lens=explorationLens;
+ const locked=lockedVirtue===i;
  const comparing=typeof lens==='number'||lens==='complement';
  const comparingIndex=lens==='complement'?opposite:lens;
  const tint=lens==='Mercy';
  const shade=lens==='Justice';
  const select=value=>exploreSlice(i,value);
- $('heading').textContent=comparing?name+' and '+virtueNames[comparingIndex]:name;
+ $('heading').textContent=(comparing?name+' and '+virtueNames[comparingIndex]:name)+(locked?' · Locked':'');
  $('caption').textContent=situation;
  const detail=document.createElement('p');
  detail.className='explorationDetail';
  if(lens==='complement'){
    detail.textContent=i===0?'Love notices what people need. Principle helps me honor what I promised each neighbor.':i===3?'Patience gives the child time to learn. Diligence helps me keep teaching and return to the chore as often as needed.':'What does '+virtueNames[opposite]+' ask you to consider in the same situation?';
- }else if(comparing)detail.textContent=neighborExamples[lens===previous?previous:i];
+ }else if(comparing)detail.textContent=lens===previous||lens===next?neighborExamples[lens===previous?previous:i]:'What would '+virtueNames[lens]+' add to how you respond in this situation?';
  else if(tint||shade)detail.textContent=tint?mercy:justice;
  else if(lens)detail.textContent=words.find(([label])=>label===lens)?.[1]||'';
- else detail.textContent='Try Mercy or Justice and see what changes in this situation.';
+ else detail.textContent=locked?'Tap another slice to compare it with '+name+'.':'Try Mercy or Justice, or double-tap '+name+' to lock it.';
  $('extra').append(detail);
  [...$('sectors').children].forEach((group,k)=>group.style.opacity=k===i||comparing&&k===comparingIndex?1:.58);
  if(tint||shade){
@@ -1495,11 +1518,12 @@ function explorationView(i){
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
  action(explorePanel==='layers'?'Close wheel layers':'Vice and agency',()=>openExplorePanel(explorePanel==='layers'?'':'layers'));
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
- action('Clear selection',()=>{angle=null;explorationLens=null;explorePanel='';render()});
+ action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
+ action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
 }
 function exploreLanding(){
  $('heading').textContent='Explore the wheel';
- $('caption').textContent='Choose a virtue to see it in action.';
+ $('caption').textContent='Tap a virtue to explore. Double-tap to lock it in place.';
  if(explorePanel==='guides')guideMenu(null);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
 }
@@ -1537,7 +1561,7 @@ function render(){
      segment.setAttribute('role','button');
      segment.setAttribute('aria-label',virtueNames[index]);
      segment.onkeydown=event=>{
-       if(event.key==='Enter'||event.key===' '){event.preventDefault();segment.onclick();}
+       if(event.key==='Enter'||event.key===' '){event.preventDefault();tapExploreSlice(index,false);}
      };
    }else{
      segment.removeAttribute('tabindex');
