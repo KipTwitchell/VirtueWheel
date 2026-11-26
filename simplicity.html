@@ -1460,7 +1460,7 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#29664d':selected?'#172c25':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
  const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
  const label=layer==='mercy'?'M':layer==='justice'?'J':title;
- shape('text',{x,y:y+3,'text-anchor':'middle','font-size':layer==='hub'?12:9,fill:layer==='justice'||layer==='virtue'&&positions[index][3]==='white'?'white':'#233c38','pointer-events':'none'},group).textContent=label;
+ shape('text',{x,y:y+3,'text-anchor':'middle',transform:layer==='hub'?'': 'rotate('+labelAngle(index)+' '+x+' '+y+')','font-size':layer==='hub'?12:11,fill:layer==='justice'||layer==='virtue'&&positions[index][3]==='white'?'white':'#233c38','pointer-events':'none'},group).textContent=label;
  group.onclick=()=>chooseLayerItem(layer,index,true);
  group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);$('extra').querySelector('button')?.focus();}};
 }
