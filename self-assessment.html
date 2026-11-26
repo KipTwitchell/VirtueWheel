@@ -8,51 +8,55 @@ body{margin:0;background:#faf7ee;color:#233c38;font:17px/1.5 system-ui,sans-seri
 main{max-width:720px;margin:auto;padding:24px 20px 48px}
 h1{font:clamp(32px,7vw,48px) Georgia,serif}
 a{color:inherit}button{font:inherit;padding:.65em 1em;color:white;background:#24453b;border:1px solid #24453b;border-radius:8px;cursor:pointer}
-textarea{box-sizing:border-box;width:100%;min-height:16rem;padding:14px;border:1px solid #88988f;border-radius:8px;background:#fffdf9;color:inherit;font:inherit}
+textarea{box-sizing:border-box;width:100%;min-height:22rem;padding:14px;border:1px solid #88988f;border-radius:8px;background:#fffdf9;color:inherit;font:inherit}
 footer{margin-top:30px;font-size:.85rem}#status{min-height:1.5em}
 </style>
 <main>
 <a href="./">Back to the Virtue Wheel</a>
 <h1>Virtue Wheel Self-Assessment</h1>
-<p>Copy the prompt below and paste it into a new chat with your preferred AI. It includes all twelve virtues and their complements. You can pause between groups and ask for a recap to bring to a later chat.</p>
+<p>Bring a situation you’re unsure how to handle. Copy the prompt into a new chat with your preferred AI, then describe the situation when it asks. The prompt includes the Wheel’s reference and an example of how the conversation can branch.</p>
 <p>Use examples you’re comfortable sharing with your AI provider. Leave out names and identifying details.</p>
 <button type="button" id="copy">Copy assessment prompt</button>
 <p id="status" role="status"></p>
 <label for="prompt"><strong>Assessment prompt</strong></label>
 <textarea id="prompt" readonly>
-Guide me through a self-assessment using the Virtue Wheel. Ask one question at a time. Work through all twelve virtues below in order. Let me pause, skip a virtue, or say I have no recent example.
+# Virtue Wheel Self-Assessment
 
-For each virtue, ask about a recent opportunity to practice it. Help me distinguish what happened, what I did, and what happened afterward. Ask what the complementary virtue would have contributed in that same situation. If my example is vague, ask one brief follow-up. Treat hypothetical answers as intentions and examples I report as self-reported evidence. When I have only one example, describe that instance. When I have several, look for a pattern across them. Avoid grades, rankings, diagnoses, and judgments about anyone's character.
+Help me reflect on one real situation using the Virtue Wheel. Begin by asking, “What situation are you unsure how to handle?” Ask one question at a time. Clarify what happened, what I did or am considering, and what still feels unresolved. If the situation is already settled, let me stop or choose another. Treat my examples as self-reported evidence and hypothetical actions as intentions. Let me pause or skip. Avoid scores, diagnoses, and judgments of character.
 
-Primary virtues
-• Love. When did I respond to someone's needs while respecting a fair boundary?
-• Hope. When did I look for a realistic possibility after a setback?
-• Faith. When did I act on a commitment or justified trust while the outcome was still uncertain?
+## How to follow the conversation
 
-Secondary virtues
-• Principle. When did I apply a fair standard, take responsibility for my part, and keep my judgment proportionate to the evidence?
-• Honesty. When did I acknowledge an inconvenient fact and let it inform my plan?
-• Humility. When did I consider a correction and change my understanding or behavior in response?
+- Name a virtue when it clarifies a choice already present. Keep that slice active when changing layers. Say when you cross to another slice and briefly explain why.
+- Use the complement to explore what else the same situation calls for. Use a neighbor when it brings out a different question. For example, Humility can help me learn from feedback, while Principle helps me apply a fair standard and keep responsibility proportionate.
+- Use the mapped vice to ask about a possible action or tendency, using the names in the reference. For a concern that spans relationships, use a hub attribute such as Integrity to ask what I want to hold consistent.
+- If I ask to explore the Shame Schema, begin with the active slice’s named belief. Use the exact wording below and ask whether it fits. Across the wheel, use the complement’s named belief. If a belief fits, offer its atoning belief and ask how it might inform the next choice. If it doesn’t fit, accept that and follow what I say.
+- When I have enough clarity, help me choose one practical next step and one observable sign of follow-through, if useful.
 
-Tertiary virtues
-• Meekness. When did I respond gently under pressure while still making my concern known?
-• Courage. When did I speak or act despite a cost because something worth protecting was at stake?
-• Patience. When did I give something the time it needed, and how did I decide whether it was time to act?
-• Diligence. When did I follow through on work that mattered even after it stopped feeling urgent?
-• Joy. When did I welcome something good or share in another person's happiness?
-• Reverence. When did I treat something someone held sacred or deeply important with care?
+## Wheel reference
 
-Complements across the wheel
-Love ↔ Principle
-Hope ↔ Honesty
-Faith ↔ Humility
-Meekness ↔ Courage
-Patience ↔ Diligence
-Joy ↔ Reverence
+The slices run clockwise. The entries immediately before and after a virtue are its neighbors, wrapping between Reverence and Love. The slice six places away is its complement. The first six beliefs are the childlike half. The following six form the mature half.
 
-Keep Principle and Humility distinct. If my supervisor asks me to revise one paragraph, Humility helps me hear the feedback and learn what was unclear. Principle helps me apply a fair standard to the paragraph, revise what I am responsible for, and keep the judgment in proportion to the evidence. Love helps me treat myself and the supervisor with care. Ask which of these actually showed up in my response.
+- Love ↔ Principle. Vice: Unstable / Lustful. Shame belief: Insufficient, “I am not good enough.” Atoning belief: “My need to grow is part of being human. I can love and be loved while I grow.”
+- Meekness ↔ Courage. Vice: Diffident / Shrinking. Shame belief: Rejected, “I do not belong.” Atoning belief: “I can accept correction and still belong.”
+- Humility ↔ Faith. Vice: Subservient / Fearful. Shame belief: Worthless, “I do not matter.” Atoning belief: “My weaknesses leave room to grow. My capacity for growth gives me worth.”
+- Patience ↔ Diligence. Vice: Derelict / Callous. Shame belief: Abandoned, “No one loves me.” Atoning belief: “Even when I feel cast off, I can exercise agency and grow.”
+- Hope ↔ Honesty. Vice: Delusional / Hollow. Shame belief: Empty, “I have nothing.” Atoning belief: “My need for replenishment gives me a reason to seek hope grounded in truth.”
+- Joy ↔ Reverence. Vice: Frivolous / Gluttonous. Shame belief: Broken, “I will always be broken.” Atoning belief: “I can offer the Savior a broken heart and receive the possibility of becoming whole.”
+- Principle ↔ Love. Vice: Prideful / Self-righteous. Shame belief: Privileged, “I am right.” Atoning belief: “Privilege carries a responsibility to extend grace and care.”
+- Courage ↔ Meekness. Vice: Overbearing / Despotic. Shame belief: Entitled, “I deserve more.” Atoning belief: “The power to act for good brings accountability for what I do.”
+- Faith ↔ Humility. Vice: Presumptuous / Arrogant. Shame belief: Exceptional, “I am better.” Atoning belief: “I can use my particular gifts in the service of others.”
+- Diligence ↔ Patience. Vice: Compulsive / Controlling. Shame belief: Alone, “It is all up to me.” Atoning belief: “I can draw strength from solitude and still call on my community.”
+- Honesty ↔ Hope. Vice: Cruel / Despairing. Shame belief: Dependent, “I need this.” Atoning belief: “I can acknowledge what I need and build relationships of mutual support.”
+- Reverence ↔ Joy. Vice: Merciless / Fanatical. Shame belief: Damned, “Nothing will ever change.” Atoning belief: “I can turn to God and begin to change again.”
 
-At the end of each group, recap the examples and identify gaps. At the end of the assessment, summarize each virtue with one observed action, one question about its complement, and any gaps in my evidence. Help me choose one practice for the coming week and one observable sign that would tell me whether I followed through. Begin by asking about Love.
+## Fictional example with possible branches
+
+A volunteer has proposed a change to a shared program. The group wants time to think, so the volunteer decides to wait without repeatedly checking for a response.
+
+- Start with Patience. “What are you giving the group time to do?” Diligence, the complement, can ask, “What preparation is still yours to do while they consider it?”
+- If the volunteer talks about what might improve, explore Hope: “What good outcome still seems possible?” If they wonder what they’ve overlooked, explore Humility: “What might the group see that you haven’t considered?”
+- If the volunteer says, “Go to the schema,” keep Patience active and name Abandoned, “No one loves me.” Ask, “If the group stays quiet, what meaning might you give their silence?” If the volunteer says the silence feels like room to think, accept that and return to the practical decision.
+- If they ask for the complement belief, cross to Diligence and name Alone, “It is all up to me.” Ask, “Does any part of carrying this feel like it’s all up to you?” If they say working independently feels like a strength, use the atoning belief to explore what they can take satisfaction in doing themselves and where support is still available.
 </textarea>
 <footer>© 2026 Kip M. Twitchell and Abby Twitchell Platt. All rights reserved.</footer>
 </main>
