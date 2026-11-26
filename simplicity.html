@@ -1427,12 +1427,43 @@ let layerSelection=null,layerAnchor=null,lastLayerTap=null;
 
 let guideMode=false;
 let guideNote='';
+// Adapted from the complement and belief-pair sections of the January 2026 manuscript.
+// Each entry covers the two slices six positions apart.
+const manuscriptPairs=[
+  [
+    "Care notices the person who needs help. Principle asks what help you can give fairly and what responsibility still belongs to them. A clear boundary can make care sustainable.",
+    "A mistake can show where you need to grow. A position of influence gives you a responsibility to extend the same room for growth to others."
+  ],
+  [
+    "Meekness helps you hear correction without retaliation. Courage helps you speak when something still needs to be put right. You can accept one part of the feedback and calmly raise the part it missed.",
+    "Correction can help you grow while you still belong. If you have the power to act, use it for good and take responsibility for the result."
+  ],
+  [
+    "Humility helps you recognize where you need to learn. Faith gives you enough confidence to act while you are still learning. You can take a step and stay open to correction.",
+    "A weakness leaves room for growth. A distinctive strength gives you something to offer. Both can be part of how you serve."
+  ],
+  [
+    "Patience gives the child time to learn. Diligence helps you keep teaching and return to the chore as often as needed.",
+    "Feeling cast off can make it hard to see the choices you still have. Solitude can build strength, and community can help carry work you cannot do alone."
+  ],
+  [
+    "Hope looks for a real possibility after a setback. Honesty asks what the evidence supports. Together they can help you take a next step without mistaking enthusiasm for a commitment.",
+    "Emptiness points to a need for replenishment. Dependence points to the help you receive from others. Seek real possibilities and relationships in which both people can contribute."
+  ],
+  [
+    "Joy welcomes the good in a moment. Reverence notices why it matters. You can celebrate with someone and give their experience the care it deserves.",
+    "Feeling broken or convinced nothing will change can make the future seem settled. In the manuscript’s Christian framing, offering a broken heart to the Savior and turning to God opens the possibility of becoming whole."
+  ]
+];
 function writtenIntersection(first,second){
  if(!first||!second||sameLayerItem(first,second))return '';
  const pair=[first,second];
  const belief=pair.find(item=>item.layer==='schema');
  const virtue=pair.find(item=>item.layer==='virtue');
  const vice=pair.find(item=>item.layer==='vice');
+ const opposite=first.index!==null&&second.index!==null&&(first.index+6)%12===second.index;
+ if(opposite&&first.layer==='schema'&&second.layer==='schema')return manuscriptPairs[first.index%6][1];
+ if(opposite&&first.layer==='virtue'&&second.layer==='virtue')return manuscriptPairs[first.index%6][0];
  if(belief&&virtue){
    if(belief.index===virtue.index)return beliefContrasts[belief.index][0];
    if(belief.index===3&&virtue.index===9)return 'While you give someone time, Diligence helps you keep showing up. Their silence can leave room for thought rather than settle what you mean to them.';
@@ -1442,9 +1473,6 @@ function writtenIntersection(first,second){
  if(first.layer==='virtue'&&second.layer==='virtue'){
    if((first.index+1)%12===second.index)return neighborExamples[first.index];
    if((second.index+1)%12===first.index)return neighborExamples[second.index];
-   const indices=[first.index,second.index];
-   if(indices.includes(3)&&indices.includes(9))return 'Patience gives the child time to learn. Diligence helps me keep teaching and return to the chore as often as needed.';
-   if(indices.includes(0)&&indices.includes(6))return 'Love notices what people need. Principle helps me honor what I promised each neighbor.';
  }
  const treatment=pair.find(item=>item.layer==='mercy'||item.layer==='justice');
  if(virtue&&treatment&&virtue.index===treatment.index)return expressions[virtue.index][treatment.layer==='mercy'?3:2];
