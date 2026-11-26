@@ -1463,13 +1463,14 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  const spokeAngle=((index*30+180)%180)-90;
  const text=shape('text',{
    x,y,'text-anchor':'middle','dominant-baseline':'central',
-   transform:layer==='hub'?'rotate(0)':'rotate('+spokeAngle+' '+x+' '+y+')',
+   transform:layer==='virtue'?'rotate('+spokeAngle+' '+x+' '+y+')':null,
    'font-size':layer==='hub'?12:11,
    fill:layer==='virtue'?positions[index][3]:layer==='vice'?'#fffdf6':'#233c38','pointer-events':'none'
  },group);
  text.textContent=title;
  if(layer!=='hub'){
-   const available=outer-inner-4;
+   const available=layer==='virtue'?outer-inner-4:
+     Math.min(outer-inner,2*((inner+outer)/2)*Math.sin(Math.PI/12))-5;
    const length=text.getComputedTextLength();
    if(length>available)text.setAttribute('font-size',Math.max(8,11*available/length));
    if(text.getComputedTextLength()>available){
