@@ -1459,27 +1459,23 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  if(layer==='hub')shape('circle',{cx:220,cy:220,r:43,fill,stroke:locked?'#29664d':'#677a70','stroke-width':locked?4:1},group);
  else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#f1b448':selected?'#172c25':layer==='vice'?'#718078':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
  const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
- // SVG text starts horizontally. The spoke at index zero points up.
- const spokeAngle=((index*30+180)%180)-90;
- const sideVice=layer==='vice'&&[2,3,4,8,9,10].includes(index);
- const rotation=sideVice?(index<6?90:-90):layer==='virtue'?spokeAngle:0;
- const text=shape('text',{
-   x,y,'text-anchor':'middle','dominant-baseline':'central',
-   transform:'rotate('+rotation+' '+x+' '+y+')',
-   'font-size':layer==='hub'?12:11,
-   fill:layer==='virtue'?positions[index][3]:layer==='vice'?'#fffdf6':'#233c38','pointer-events':'none'
- },group);
- text.textContent=title;
- if(layer!=='hub'){
-   const available=sideVice?Math.floor((inner+outer)*Math.sin(Math.PI/12)*.8):layer==='virtue'?outer-inner-4:
-     Math.min(outer-inner,2*((inner+outer)/2)*Math.sin(Math.PI/12))-5;
-   const length=text.getComputedTextLength();
-   if(length>available)text.setAttribute('font-size',Math.max(8,11*available/length));
+ const schemaCompanions=['Yet Sufficient','Yet Belonging','Yet Valuable','Yet Independent','Yet Full','Yet Whole','Yet Gracious','Yet Accountable','Yet Nothing','Yet Many','Yet Interdependent','Yet Saved'];
+ const lines=layer==='virtue'?positions[index].slice(0,2):layer==='vice'?vices[index]:layer==='schema'?[title,schemaCompanions[index]]:[title];
+ const rotation=layer==='schema'||layer==='vice'?labelAngle(index):0;
+ const labels=shape('g',{transform:'rotate('+rotation+' '+x+' '+y+')','pointer-events':'none'},group);
+ const available=layer==='hub'?76:Math.floor((inner+outer)*Math.sin(Math.PI/12))-10;
+ lines.forEach((line,row)=>{
+   const text=shape('text',{
+     x,y:y+(row-(lines.length-1)/2)*12,'text-anchor':'middle','dominant-baseline':'central',
+     'font-size':layer==='hub'?12:11,
+     fill:layer==='virtue'?positions[index][3]:layer==='vice'?'#fffdf6':'#233c38'
+   },labels);
+   text.textContent=line;
    if(text.getComputedTextLength()>available){
      text.setAttribute('textLength',available);
      text.setAttribute('lengthAdjust','spacingAndGlyphs');
    }
- }
+ });
  group.onclick=()=>chooseLayerItem(layer,index,true);
  group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);$('extra').querySelector('button')?.focus();}};
 }
@@ -1533,14 +1529,14 @@ function layerExplorer(i){
  const expanded=visibleLayers.has('vice');
  $('caption').textContent='Double-tap any visible item to lock it. Then tap another to compare.';
  const schemaVisible=visibleLayers.has('schema');
- const rings={virtue:expanded?[44,112]:[61,198],schema:[119,161],vice:[169,208]};
- if(expanded&&!schemaVisible)showExpansionPreview(scene,140);
+ const rings={virtue:expanded?[56,122]:[61,198],schema:[123,168],vice:[169,208]};
+ if(expanded&&!schemaVisible)showExpansionPreview(scene,146);
  for(const [layer,[inner,outer]] of Object.entries(rings)){
    if(!visibleLayers.has(layer))continue;
    positions.forEach((position,index)=>{
      const fill=layer==='virtue'?position[2]:layer==='schema'
-       ? 'color-mix(in srgb, '+position[2]+' 13%, #fbf8f1)'
-       : 'color-mix(in srgb, '+position[2]+' 10%, #263531)';
+       ? '#fffdf7'
+       : '#585d5a';
      drawLayerItem(scene,layer,index,inner,outer,fill);
    });
    shape('circle',{cx:220,cy:220,r:outer,fill:'none',stroke:layer==='vice'?'#233c38':'#fbf8f1','stroke-width':1.4,'pointer-events':'none'},scene);
@@ -1551,7 +1547,7 @@ function layerExplorer(i){
  if(!visibleLayers.has('hub'))wheelLayerControl('Hub',168,201,()=>toggleExpandedLayer('hub'),false);
  if(expanded){
    const index=layerSelection?.index??layerAnchor?.index??i;
-   for(const [layer,x] of [['mercy',48],['justice',392]]){
+   for(const [layer,x] of [['justice',48],['mercy',392]]){
      const item={layer,index}, locked=sameLayerItem(layerAnchor,item);
      const group=shape('g',{role:'button',tabindex:0,class:'exploreChoice','aria-label':layerTitle(item)+(locked?', locked':'')},scene);
      shape('rect',{x:x-41,y:397,width:82,height:36,rx:13,fill:layer==='justice'?'#303831':'#fffdf6',stroke:locked?'#398665':'#677a70','stroke-width':locked?4:1},group);
