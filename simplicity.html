@@ -1464,6 +1464,15 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  group.onclick=()=>chooseLayerItem(layer,index,true);
  group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);$('extra').querySelector('button')?.focus();}};
 }
+function expandWheel(index){
+ angle=index;
+ const item={layer:'virtue',index};
+ layerSelection=item;
+ if(lockedVirtue===index&&!layerAnchor)layerAnchor=item;
+ lastLayerTap=null;
+ visibleLayers.add('vice');
+ openExplorePanel('layers');
+}
 function layerExplorer(i){
  const scene=$('explorationControls');
  $('sectors').style.visibility='hidden';
@@ -1636,7 +1645,7 @@ function explorationView(i){
  }
  if(explorePanel==='guides')guideMenu(i);
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
- action('Expand the wheel',()=>openExplorePanel('layers'));
+ action('Expand to vice wheel',()=>expandWheel(i));
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
  action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
  action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
@@ -1644,7 +1653,7 @@ function explorationView(i){
 function exploreLanding(){
  $('heading').textContent='Explore the wheel';
  $('caption').textContent='Tap a virtue to explore. Double-tap to lock it in place.';
- action('Expand the wheel',()=>{angle=0;openExplorePanel('layers')});
+ action('Expand to vice wheel',()=>expandWheel(0));
  if(explorePanel==='guides')guideMenu(null);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
 }
