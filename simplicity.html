@@ -1498,13 +1498,25 @@ function layerExplorer(i){
    line.append(heading,document.createElement('br'),layerText(item));
    readout.append(line);
  };
- if(layerAnchor)present(layerAnchor,'Locked · ');
+ if(layerAnchor)present(layerAnchor,visibleLayers.has(layerAnchor.layer)?'Locked · ':'Locked · hidden layer · ');
  if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection,'');
  if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
    const question=document.createElement('p');
    const sameSlice=layerAnchor.index===layerSelection.index;
    const across=layerAnchor.index!==null&&layerSelection.index===(layerAnchor.index+6)%12;
-   question.textContent=sameSlice?'Same slice: How does each layer change the way you would respond?':across?'Across the wheel: What does the complement’s side reveal about the item you locked?':'What does this second item help you notice about the one you locked?';
+   const pair=[layerAnchor,layerSelection];
+   const belief=pair.find(item=>item.layer==='schema');
+   const other=pair.find(item=>item!==belief);
+   if(belief&&other&&(sameSlice||across)){
+     const name=layerTitle(belief);
+     if(other.layer==='vice')question.textContent=sameSlice
+       ? 'If '+name+' feels true, watch for this response: '+beliefContrasts[belief.index][1]
+       : 'Could taking '+name+' as true pull you toward '+vices[other.index].join(' or ').toLowerCase()+' across the wheel?';
+     else if(other.layer==='virtue')question.textContent=sameSlice
+       ? 'How '+virtueNames[other.index]+' can respond to '+name+': '+beliefContrasts[belief.index][0]
+       : 'What could '+virtueNames[other.index]+', the complement of '+virtueNames[belief.index]+', help you do while you work through '+name+'?';
+   }
+   if(!question.textContent)question.textContent=sameSlice?'Same slice: How does each layer change the way you would respond?':across?'Across the wheel: What does the complement’s side reveal about the item you locked?':'What does this second item help you notice about the one you locked?';
    readout.append(question);
  }
  if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))action('Lock '+layerTitle(layerSelection),()=>{layerAnchor=layerSelection;lastLayerTap=null;render()});
