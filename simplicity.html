@@ -1461,15 +1461,17 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
  // SVG text starts horizontally. The spoke at index zero points up.
  const spokeAngle=((index*30+180)%180)-90;
+ const sideVice=layer==='vice'&&[2,3,4,8,9,10].includes(index);
+ const rotation=sideVice?(index<6?90:-90):layer==='virtue'?spokeAngle:0;
  const text=shape('text',{
    x,y,'text-anchor':'middle','dominant-baseline':'central',
-   transform:layer==='virtue'?'rotate('+spokeAngle+' '+x+' '+y+')':null,
+   transform:'rotate('+rotation+' '+x+' '+y+')',
    'font-size':layer==='hub'?12:11,
    fill:layer==='virtue'?positions[index][3]:layer==='vice'?'#fffdf6':'#233c38','pointer-events':'none'
  },group);
  text.textContent=title;
  if(layer!=='hub'){
-   const available=layer==='virtue'?outer-inner-4:
+   const available=sideVice?Math.floor((inner+outer)*Math.sin(Math.PI/12)*.8):layer==='virtue'?outer-inner-4:
      Math.min(outer-inner,2*((inner+outer)/2)*Math.sin(Math.PI/12))-5;
    const length=text.getComputedTextLength();
    if(length>available)text.setAttribute('font-size',Math.max(8,11*available/length));
