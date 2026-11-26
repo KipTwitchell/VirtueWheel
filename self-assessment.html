@@ -71,6 +71,12 @@ A volunteer wants to share a promising project with two organizations. One has s
 <script>
 const promptText = document.getElementById('prompt');
 const status = document.getElementById('status');
+const suggestedVirtue = new URLSearchParams(location.search).get('virtue');
+const virtues = ['Love','Meekness','Humility','Patience','Hope','Joy','Principle','Courage','Faith','Diligence','Honesty','Reverence'];
+if (virtues.includes(suggestedVirtue)) {
+  promptText.value = promptText.value.trim() + '\n\nI arrived from the ' + suggestedVirtue + ' slice. Begin with the situation I bring, and draw on that virtue if it fits.';
+  document.querySelector('main > a').href = './?virtue=' + encodeURIComponent(suggestedVirtue);
+}
 document.getElementById('copy').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(promptText.value.trim());
