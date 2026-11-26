@@ -1457,7 +1457,7 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  const title=layerTitle(item);
  const group=shape('g',{role:'button',tabindex:0,class:'exploreChoice','aria-label':layerNames[layer]+': '+title+(locked?', locked':''),'aria-pressed':String(Boolean(selected))},parent);
  if(layer==='hub')shape('circle',{cx:220,cy:220,r:43,fill,stroke:locked?'#29664d':'#677a70','stroke-width':locked?4:1},group);
- else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#29664d':selected?'#172c25':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
+ else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#f1b448':selected?'#172c25':layer==='vice'?'#718078':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
  const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
  // SVG text starts horizontally. The spoke at index zero points up.
  const spokeAngle=((index*30+180)%180)-90;
@@ -1465,11 +1465,11 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
    x,y,'text-anchor':'middle','dominant-baseline':'central',
    transform:layer==='hub'?'rotate(0)':'rotate('+spokeAngle+' '+x+' '+y+')',
    'font-size':layer==='hub'?12:11,
-   fill:layer==='virtue'?positions[index][3]:'#233c38','pointer-events':'none'
+   fill:layer==='virtue'?positions[index][3]:layer==='vice'?'#fffdf6':'#233c38','pointer-events':'none'
  },group);
  text.textContent=title;
  if(layer!=='hub'){
-   const available=outer-inner-7;
+   const available=outer-inner-4;
    const length=text.getComputedTextLength();
    if(length>available)text.setAttribute('font-size',Math.max(8,11*available/length));
    if(text.getComputedTextLength()>available){
@@ -1489,6 +1489,38 @@ function expandWheel(index){
  visibleLayers.add('vice');
  openExplorePanel('layers');
 }
+
+function wheelLayerControl(label,x,y,callback,expanded){
+ const scene=$('explorationControls');
+ const g=shape('g',{transform:'translate('+x+' '+y+')',class:'exploreChoice layerControl',role:'button',tabindex:0,
+   'aria-label':(expanded?'Hide ':'Show ')+label,'aria-expanded':String(expanded)},scene);
+ const width=label==='Shame Schema'?132:104;
+ shape('rect',{width,height:38,rx:18,fill:'#fffdf6',stroke:'#52675e','stroke-width':1.4},g);
+ shape('text',{x:16,y:24,fill:'#233c38','font-size':15,'pointer-events':'none'},g).textContent=(expanded?'− ':'+ ')+label;
+ const activate=event=>{
+   if(event.type==='keydown'&&event.key!=='Enter'&&event.key!==' ')return;
+   event.preventDefault();
+   callback();
+   if(event.type==='keydown'){
+     [...scene.querySelectorAll('.layerControl')].find(control=>control.textContent.includes(label))?.focus({preventScroll:true});
+   }
+ };
+ g.onclick=activate;
+ g.onkeydown=activate;
+}
+function toggleExpandedLayer(layer){
+ lastLayerTap=null;
+ if(visibleLayers.has(layer)){
+   visibleLayers.delete(layer);
+   if(layer==='vice')visibleLayers.delete('schema');
+   if(layerSelection&&(['mercy','justice'].includes(layerSelection.layer)?!visibleLayers.has('vice'):!visibleLayers.has(layerSelection.layer)))layerSelection=null;
+ }else visibleLayers.add(layer);
+ render();
+}
+function showExpansionPreview(scene,radius){
+ shape('circle',{cx:220,cy:220,r:radius,fill:'none',stroke:'#82938a','stroke-dasharray':'3 5','pointer-events':'none'},scene);
+}
+
 function layerExplorer(i){
  const scene=$('explorationControls');
  $('sectors').style.visibility='hidden';
@@ -1497,14 +1529,23 @@ function layerExplorer(i){
  $('heading').textContent='Wheel layers';
  const expanded=visibleLayers.has('vice');
  $('caption').textContent='Double-tap any visible item to lock it. Then tap another to compare.';
- const rings={virtue:expanded?[61,131]:[61,208],schema:[133,163],vice:[165,208]};
+ const schemaVisible=visibleLayers.has('schema');
+ const rings={virtue:expanded?[44,112]:[61,198],schema:[119,161],vice:[169,208]};
+ if(expanded&&!schemaVisible)showExpansionPreview(scene,140);
  for(const [layer,[inner,outer]] of Object.entries(rings)){
-   if(visibleLayers.has(layer))positions.forEach((position,index)=>{
-     const fill=layer==='virtue'?position[2]:layer==='schema'?'#e9e5d6':'#dadfd8';
+   if(!visibleLayers.has(layer))continue;
+   positions.forEach((position,index)=>{
+     const fill=layer==='virtue'?position[2]:layer==='schema'
+       ? 'color-mix(in srgb, '+position[2]+' 13%, #fbf8f1)'
+       : 'color-mix(in srgb, '+position[2]+' 10%, #263531)';
      drawLayerItem(scene,layer,index,inner,outer,fill);
    });
+   shape('circle',{cx:220,cy:220,r:outer,fill:'none',stroke:layer==='vice'?'#233c38':'#fbf8f1','stroke-width':1.4,'pointer-events':'none'},scene);
  }
  if(visibleLayers.has('hub'))drawLayerItem(scene,'hub',null,0,0,'#fffdf6');
+ wheelLayerControl('Vice wheel',4,7,()=>toggleExpandedLayer('vice'),expanded);
+ if(expanded)wheelLayerControl('Shame Schema',304,7,()=>toggleExpandedLayer('schema'),schemaVisible);
+ if(!visibleLayers.has('hub'))wheelLayerControl('Hub',168,201,()=>toggleExpandedLayer('hub'),false);
  if(expanded){
    const index=layerSelection?.index??layerAnchor?.index??i;
    for(const [layer,x] of [['mercy',48],['justice',392]]){
@@ -1516,23 +1557,6 @@ function layerExplorer(i){
      group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);}};
    }
  }
- const controls=explorationRow('Expand the wheel');
- const toggle=(layer,label)=>{
-   const button=explorationButton(controls,label,()=>{
-     lastLayerTap=null;
-     if(visibleLayers.has(layer)){
-       visibleLayers.delete(layer);
-       if(layer==='vice')visibleLayers.delete('schema');
-       if(layerSelection&&(['mercy','justice'].includes(layerSelection.layer)?!visibleLayers.has('vice'):!visibleLayers.has(layerSelection.layer)))layerSelection=null;
-     }else visibleLayers.add(layer);
-     render();
-     $('extra').querySelector('[data-wheel-layer="'+layer+'"]')?.focus({preventScroll:true});
-   },visibleLayers.has(layer));
-   button.dataset.wheelLayer=layer;
- };
- toggle('vice',expanded?'Hide vice wheel':'Expand to vice wheel');
- if(expanded)toggle('schema',visibleLayers.has('schema')?'Hide Shame Schema':'Show Shame Schema in the gap');
- toggle('hub',visibleLayers.has('hub')?'Hide hub':'Show hub');
  const readout=$('extra');
  const present=(item,prefix)=>{
    const line=document.createElement('p');
@@ -1661,7 +1685,7 @@ function explorationView(i){
  }
  if(explorePanel==='guides')guideMenu(i);
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
- action('Expand to vice wheel',()=>expandWheel(i));
+ wheelLayerControl('Vice wheel',4,7,()=>expandWheel(i),false);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
  action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
  action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
@@ -1669,7 +1693,7 @@ function explorationView(i){
 function exploreLanding(){
  $('heading').textContent='Explore the wheel';
  $('caption').textContent='Tap a virtue to explore. Double-tap to lock it in place.';
- action('Expand to vice wheel',()=>expandWheel(0));
+ wheelLayerControl('Vice wheel',4,7,()=>expandWheel(0),false);
  if(explorePanel==='guides')guideMenu(null);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
 }
