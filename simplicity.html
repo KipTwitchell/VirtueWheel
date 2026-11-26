@@ -1426,6 +1426,7 @@ const visibleLayers=new Set(['virtue']);
 let layerSelection=null,layerAnchor=null,lastLayerTap=null;
 
 let guideMode=false;
+let guideNote='';
 function writtenIntersection(first,second){
  if(!first||!second||sameLayerItem(first,second))return '';
  const pair=[first,second];
@@ -1455,6 +1456,7 @@ function guideDimmed(item){
 }
 function toggleWheelGuide(index){
  guideMode=!guideMode;
+ guideNote='';
  if(explorePanel!=='layers'){
    angle=angle??index;
    explorePanel='layers';
@@ -1479,6 +1481,7 @@ function sameLayerItem(a,b){return a&&b&&a.layer===b.layer&&a.index===b.index&&a
 function chooseLayerItem(layer,index,fromPointer,detail){
  const item={layer,index,detail};
  if(guideDimmed(item)&&!(layer==='hub'&&detail===undefined))return;
+ guideNote=guideMode&&!layerAnchor?writtenIntersection(layerSelection,item):'';
  const now=performance.now();
  if(fromPointer&&sameLayerItem(lastLayerTap,item)&&now-lastLayerTap.time<360){
    layerAnchor=sameLayerItem(layerAnchor,item)?null:item;
@@ -1496,7 +1499,7 @@ function drawLayerItem(parent,layer,index,inner,outer,fill){
  const item={layer,index};
  const selected=sameLayerItem(layerSelection,item),locked=sameLayerItem(layerAnchor,item);
  const title=layerTitle(item);
- const group=shape('g',{role:'button',tabindex:0,opacity:guideDimmed(item)?.28:1,class:'exploreChoice','aria-label':layerNames[layer]+': '+title+(locked?', locked':''),'aria-pressed':String(Boolean(selected))},parent);
+ const group=shape('g',{role:'button',tabindex:0,opacity:guideDimmed(item)?.28:1,'aria-disabled':String(Boolean(guideDimmed(item))),class:'exploreChoice','aria-label':layerNames[layer]+': '+title+(locked?', locked':''),'aria-pressed':String(Boolean(selected))},parent);
  if(layer==='hub')shape('circle',{cx:220,cy:220,r:43,fill,stroke:locked?'#29664d':'#677a70','stroke-width':locked?4:1},group);
  else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#f1b448':selected?'#172c25':layer==='vice'?'#718078':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
  const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
@@ -1639,7 +1642,7 @@ function layerExplorer(i){
    const index=(layerAnchor?.layer==='virtue'?layerAnchor.index:lockedVirtue)??layerSelection?.index??layerAnchor?.index??i;
    for(const [layer,x] of [['justice',48],['mercy',392]]){
      const item={layer,index}, locked=sameLayerItem(layerAnchor,item);
-     const group=shape('g',{role:'button',tabindex:0,opacity:guideDimmed(item)?.28:1,class:'exploreChoice','aria-label':layerTitle(item)+(locked?', locked':'')},scene);
+     const group=shape('g',{role:'button',tabindex:0,opacity:guideDimmed(item)?.28:1,'aria-disabled':String(Boolean(guideDimmed(item))),class:'exploreChoice','aria-label':layerTitle(item)+(locked?', locked':'')},scene);
      shape('rect',{x:x-41,y:397,width:82,height:36,rx:13,fill:layer==='justice'?'#303831':'#fffdf6',stroke:locked?'#398665':'#677a70','stroke-width':locked?4:1},group);
      shape('text',{x,y:420,'text-anchor':'middle','font-size':14,fill:layer==='justice'?'white':'#233c38','pointer-events':'none'},group).textContent=layerNames[layer];
      group.onclick=()=>chooseLayerItem(layer,index,true);
@@ -1668,6 +1671,7 @@ function layerExplorer(i){
  };
  if(layerAnchor)present(layerAnchor,(visibleLayers.has(layerAnchor.layer)||expanded&&['mercy','justice'].includes(layerAnchor.layer))?'Locked · ':'Locked · hidden layer · ');
  if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection,'');
+ if(guideMode&&guideNote&&!layerAnchor){const note=document.createElement('p');note.textContent=guideNote;readout.append(note);}
  if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
    const question=document.createElement('p');
    const sameSlice=layerAnchor.index===layerSelection.index;
