@@ -1549,8 +1549,7 @@ function layerChoices(){
  row.classList.add('layerChoiceRow');
  for(const value of values){
    const text=hub?value:value+'% '+(layer==='mercy'?'white':'black');
-   const button=explorationButton(row,text,()=>chooseLayerItem(layer,index,false,value),detail===value);
-   button.ondblclick=()=>{layerAnchor={layer,index,detail:value};render()};
+   const button=explorationButton(row,text,event=>chooseLayerItem(layer,index,event.detail>0,value),detail===value);
    if(!hub){
      button.style.background='color-mix(in srgb, '+positions[index][2]+', '+(layer==='mercy'?'white':'black')+' '+value+'%)';
      button.style.color=layer==='justice'?'white':'#182a22';
@@ -1591,7 +1590,7 @@ function layerExplorer(i){
  if(visibleLayers.has('hub'))drawLayerItem(scene,'hub',null,0,0,'#fffdf6');
  wheelLayerControl('Vice wheel',4,7,()=>toggleExpandedLayer('vice'),expanded);
  if(expanded)wheelLayerControl('Shame Schema',304,7,()=>toggleExpandedLayer('schema'),schemaVisible);
- if(!visibleLayers.has('hub'))wheelLayerControl('Hub',168,201,()=>toggleExpandedLayer('hub'),false);
+ if(!visibleLayers.has('hub'))wheelLayerControl('Hub',168,201,showHubChoices,false);
  if(expanded){
    const index=layerSelection?.index??layerAnchor?.index??i;
    for(const [layer,x] of [['justice',48],['mercy',392]]){
