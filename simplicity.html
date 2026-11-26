@@ -1545,7 +1545,8 @@ function layerChoices(){
  const {layer,index,detail}=layerSelection;
  const hub=layer==='hub';
  const values=hub?['Knowledge','Wisdom','Obedience','Holiness','Grateful','Mindful','Integrity','Temperance']:layer==='mercy'?['Merciful','Forgiving','Indulgent']:['Just','Exacting','Severe'];
- const row=explorationRow(hub?'Hub attributes':layer==='mercy'?'Mercy tints':'Justice shades');
+ const row=explorationRow(hub?'Hub attributes':(layer==='mercy'?'Mercy tints':'Justice shades')+' of '+virtueNames[index]);
+ if(!hub){const heading=document.createElement('strong');heading.textContent=(layer==='mercy'?'Mercy tints':'Justice shades')+' of '+virtueNames[index];heading.style.gridColumn='1 / -1';row.append(heading);}
  row.classList.add('layerChoiceRow');
  for(const [step,value] of values.entries()){
    const text=value;
@@ -1592,7 +1593,7 @@ function layerExplorer(i){
  if(expanded)wheelLayerControl('Shame Schema',304,7,()=>toggleExpandedLayer('schema'),schemaVisible);
  if(!visibleLayers.has('hub'))wheelLayerControl('Hub',168,201,showHubChoices,false);
  if(expanded){
-   const index=layerSelection?.index??layerAnchor?.index??i;
+   const index=(layerAnchor?.layer==='virtue'?layerAnchor.index:lockedVirtue)??layerSelection?.index??layerAnchor?.index??i;
    for(const [layer,x] of [['justice',48],['mercy',392]]){
      const item={layer,index}, locked=sameLayerItem(layerAnchor,item);
      const group=shape('g',{role:'button',tabindex:0,class:'exploreChoice','aria-label':layerTitle(item)+(locked?', locked':'')},scene);
