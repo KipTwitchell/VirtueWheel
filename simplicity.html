@@ -1458,6 +1458,7 @@ function toggleWheelGuide(index){
  guideMode=!guideMode;
  guideNote='';
  if(explorePanel!=='layers'){
+   layerSelection=angle===null?null:{layer:'virtue',index:(angle+120)%12};
    angle=angle??index;
    explorePanel='layers';
    if(lockedVirtue!==null)layerAnchor={layer:'virtue',index:lockedVirtue};
