@@ -60,7 +60,7 @@
 #schemaScene [role=button]:focus-visible rect{stroke:#173b2f;stroke-width:3}
 .exploreChoice{cursor:pointer}.exploreChoice:focus-visible>:first-child{stroke:#152b24;stroke-width:4}#sectors>g{cursor:pointer}
 #wheelStage{margin-block:8px}
-#sectors{touch-action:manipulation}
+#sectors,#explorationControls{touch-action:manipulation}
 .explorationDetail{margin-block:.65em}
 .explorationRow{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin:.7em 0}
 .explorationRow button{padding:5px 11px;background:transparent}
@@ -1419,6 +1419,99 @@ function wheelChoice(parent,radius,angle,label,callback,options={}){
 }
 
 let explorePanel='';
+
+const layerNames={virtue:'Virtue',schema:'Shame Schema',vice:'Vice',mercy:'Mercy',justice:'Justice',hub:'Hub'};
+const visibleLayers=new Set(['virtue']);
+let layerSelection=null,layerAnchor=null,lastLayerTap=null;
+function layerTitle({layer,index}){
+ if(layer==='schema')return beliefs[index][0];
+ if(layer==='vice')return vices[index][0];
+ return layer==='hub'?'Integrity':layer==='virtue'?virtueNames[index]:layerNames[layer]+' · '+virtueNames[index];
+}
+function layerText({layer,index}){
+ if(layer==='schema')return '“'+beliefs[index][1]+'” '+beliefs[index][2];
+ if(layer==='vice')return vices[index].join(' / ')+' — '+beliefContrasts[index][1];
+ if(layer==='hub')return attributes.Integrity;
+ if(layer==='virtue')return beliefContrasts[index][0];
+ return expressions[index][layer==='mercy'?3:2];
+}
+function sameLayerItem(a,b){return a&&b&&a.layer===b.layer&&a.index===b.index}
+function chooseLayerItem(layer,index,fromPointer){
+ const item={layer,index};
+ const now=performance.now();
+ if(fromPointer&&sameLayerItem(lastLayerTap,item)&&now-lastLayerTap.time<360){
+   layerAnchor=sameLayerItem(layerAnchor,item)?null:item;
+   lastLayerTap=null;
+ }else lastLayerTap=fromPointer?{...item,time:now}:null;
+ layerSelection=item;
+ render();
+}
+function layerRingPath(index,inner,outer){
+ const start=index*30-15,end=start+30;
+ return 'M'+point(outer,start)+' A'+outer+' '+outer+' 0 0 1 '+point(outer,end)+
+   ' L'+point(inner,end)+' A'+inner+' '+inner+' 0 0 0 '+point(inner,start)+' Z';
+}
+function drawLayerItem(parent,layer,index,inner,outer,fill){
+ const item={layer,index};
+ const selected=sameLayerItem(layerSelection,item),locked=sameLayerItem(layerAnchor,item);
+ const title=layerTitle(item);
+ const group=shape('g',{role:'button',tabindex:0,class:'exploreChoice','aria-label':layerNames[layer]+': '+title+(locked?', locked':''),'aria-pressed':String(Boolean(selected))},parent);
+ if(layer==='hub')shape('circle',{cx:220,cy:220,r:43,fill,stroke:locked?'#29664d':'#677a70','stroke-width':locked?4:1},group);
+ else shape('path',{d:layerRingPath(index,inner,outer),fill,stroke:locked?'#29664d':selected?'#172c25':'#fbf8f1','stroke-width':locked?4:selected?3:1},group);
+ const [x,y]=layer==='hub'?[220,220]:point((inner+outer)/2,index*30);
+ const label=layer==='mercy'?'M':layer==='justice'?'J':title;
+ shape('text',{x,y:y+3,'text-anchor':'middle','font-size':layer==='hub'?12:9,fill:layer==='justice'||layer==='virtue'&&positions[index][3]==='white'?'white':'#233c38','pointer-events':'none'},group).textContent=label;
+ group.onclick=()=>chooseLayerItem(layer,index,true);
+ group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);$('extra').querySelector('button')?.focus();}};
+}
+function layerExplorer(i){
+ const scene=$('explorationControls');
+ $('sectors').style.visibility='hidden';
+ $('hubLabel').textContent='';
+ $('hubTarget').style.pointerEvents='none';
+ $('heading').textContent='Wheel layers';
+ $('caption').textContent='Show the layers you want. Double-tap an item to lock it, then tap another item to compare.';
+ const rows={
+   mercy:[48,75,'#f5ead7'],virtue:[77,131,null],schema:[133,160,'#e9e5d6'],
+   vice:[162,188,'#dadfd8'],justice:[190,209,'#303831']
+ };
+ for(const [layer,[inner,outer,fill]] of Object.entries(rows)){
+   if(visibleLayers.has(layer))positions.forEach((position,index)=>{
+     const tint=layer==='mercy'?'color-mix(in srgb, '+position[2]+' 23%, white)':layer==='justice'?'color-mix(in srgb, '+position[2]+' 25%, black)':fill;
+     drawLayerItem(scene,layer,index,inner,outer,tint||position[2]);
+   });
+ }
+ if(visibleLayers.has('hub'))drawLayerItem(scene,'hub',null,0,0,'#fffdf6');
+ const controls=explorationRow('Show or hide wheel layers');
+ for(const [layer,name] of Object.entries(layerNames))explorationButton(controls,name,()=>{
+   lastLayerTap=null;
+   if(visibleLayers.has(layer)){visibleLayers.delete(layer);if(layerSelection?.layer===layer)layerSelection=null;}
+   else visibleLayers.add(layer);
+   render();
+   [...$('extra').querySelectorAll('button')].find(button=>button.textContent===name)?.focus({preventScroll:true});
+ },visibleLayers.has(layer));
+ const readout=$('extra');
+ const present=(item,prefix)=>{
+   const line=document.createElement('p');
+   const heading=document.createElement('strong');
+   heading.textContent=prefix+layerNames[item.layer]+' · '+layerTitle(item);
+   line.append(heading,document.createElement('br'),layerText(item));
+   readout.append(line);
+ };
+ if(layerAnchor)present(layerAnchor,'Locked · ');
+ if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection,'');
+ if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
+   const question=document.createElement('p');
+   const sameSlice=layerAnchor.index===layerSelection.index;
+   const across=layerAnchor.index!==null&&layerSelection.index===(layerAnchor.index+6)%12;
+   question.textContent=sameSlice?'Same slice: How does each layer change the way you would respond?':across?'Across the wheel: What does the complement’s side reveal about the item you locked?':'What does this second item help you notice about the one you locked?';
+   readout.append(question);
+ }
+ if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))action('Lock '+layerTitle(layerSelection),()=>{layerAnchor=layerSelection;lastLayerTap=null;render()});
+ if(layerAnchor)action('Unlock '+layerTitle(layerAnchor),()=>{layerAnchor=null;lastLayerTap=null;render()});
+ action('Return to '+virtueNames[i],()=>openExplorePanel(''));
+}
+
 function openExplorePanel(panel){
  explorePanel=panel;
  render();
@@ -1463,6 +1556,7 @@ function guideMenu(i){
  explorationLink(menu,'Self-assessment','self-assessment.html'+(i===null?'':'?virtue='+encodeURIComponent(virtueNames[i])));
 }
 function explorationView(i){
+ if(explorePanel==='layers'){layerExplorer(i);return}
  const name=virtueNames[i];
  const opposite=(i+6)%12;
  const previous=(i+11)%12;
@@ -1516,7 +1610,7 @@ function explorationView(i){
  }
  if(explorePanel==='guides')guideMenu(i);
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
- action(explorePanel==='layers'?'Close wheel layers':'Vice and agency',()=>openExplorePanel(explorePanel==='layers'?'':'layers'));
+ action('Wheel layers',()=>openExplorePanel('layers'));
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
  action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
  action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
@@ -1524,11 +1618,13 @@ function explorationView(i){
 function exploreLanding(){
  $('heading').textContent='Explore the wheel';
  $('caption').textContent='Tap a virtue to explore. Double-tap to lock it in place.';
+ action('Wheel layers',()=>{angle=0;openExplorePanel('layers')});
  if(explorePanel==='guides')guideMenu(null);
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
 }
 
 function render(){
+ $('sectors').style.visibility='';
  tourCount('');
  const close=mode==='schema'&&guidedBeliefs&&!schemaIntro&&schemaIndex!==null;
  $('wheel').setAttribute('viewBox',close?'119 1 202 124':'0 0 440 440');
