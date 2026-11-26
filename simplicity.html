@@ -1520,6 +1520,18 @@ function showExpansionPreview(scene,radius){
  shape('circle',{cx:220,cy:220,r:radius,fill:'none',stroke:'#82938a','stroke-dasharray':'3 5','pointer-events':'none'},scene);
 }
 
+function nearbyLock(scene,index,radius,locked,callback){
+ const [x,y]=index===null?[220,220]:point(radius,index*30);
+ const left=x>220;
+ const px=Math.max(3,Math.min(359,left?x-94:x+14));
+ const py=Math.max(48,Math.min(353,y-19));
+ const label=locked?'Unlock':'Lock';
+ const g=shape('g',{transform:'translate('+px+' '+py+')',role:'button',tabindex:0,class:'exploreChoice','aria-label':label+' selected item'},scene);
+ shape('rect',{width:78,height:38,rx:14,fill:'#fffdf6',stroke:'#52675e','stroke-width':1.5},g);
+ shape('text',{x:39,y:24,'text-anchor':'middle','font-size':15,fill:'#233c38','pointer-events':'none'},g).textContent=label;
+ g.onclick=callback;
+ g.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();callback();$('explorationControls').querySelector('[aria-label$="selected item"]')?.focus();}};
+}
 function layerExplorer(i){
  const scene=$('explorationControls');
  $('sectors').style.visibility='hidden';
@@ -1555,6 +1567,17 @@ function layerExplorer(i){
      group.onclick=()=>chooseLayerItem(layer,index,true);
      group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();chooseLayerItem(layer,index,false);}};
    }
+ }
+ if(layerSelection){
+   const {layer,index}=layerSelection;
+   const range=rings[layer];
+   const radius=range?(range[0]+range[1])/2:0;
+   const locked=sameLayerItem(layerAnchor,layerSelection);
+   if(range||layer==='hub')nearbyLock(scene,index,radius,locked,()=>{
+     layerAnchor=locked?null:layerSelection;
+     lastLayerTap=null;
+     render();
+   });
  }
  const readout=$('extra');
  const present=(item,prefix)=>{
@@ -1685,6 +1708,7 @@ function explorationView(i){
  if(explorePanel==='guides')guideMenu(i);
  action(explorePanel==='compare'?'Close comparison':'Compare',()=>openExplorePanel(explorePanel==='compare'?'':'compare'));
  wheelLayerControl('Vice wheel',4,7,()=>expandWheel(i),false);
+ nearbyLock($('explorationControls'),i,142,locked,()=>toggleVirtueLock(i));
  action(explorePanel==='guides'?'Close guides':'Guides',()=>openExplorePanel(explorePanel==='guides'?'':'guides'));
  action(locked?'Unlock '+name:'Lock '+name,()=>toggleVirtueLock(i));
  action('Clear selection',()=>{angle=null;lockedVirtue=null;recentSliceTap=null;explorationLens=null;explorePanel='';render()});
