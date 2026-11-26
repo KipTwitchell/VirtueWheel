@@ -1427,7 +1427,7 @@ let layerSelection=null,layerAnchor=null,lastLayerTap=null;
 function layerTitle({layer,index,detail}){
  if(layer==='schema')return beliefs[index][0];
  if(layer==='vice')return vices[index][0];
- return layer==='hub'?(detail||'Hub'):layer==='virtue'?virtueNames[index]:layerNames[layer]+' · '+virtueNames[index]+(detail?' · '+detail+'%':'');
+ return layer==='hub'?(detail||'Hub'):layer==='virtue'?virtueNames[index]:layerNames[layer]+' · '+virtueNames[index]+(detail?' · '+detail:'');
 }
 function layerText({layer,index,detail}){
  if(layer==='schema')return '“'+beliefs[index][1]+'” '+beliefs[index][2];
@@ -1544,14 +1544,14 @@ function showHubChoices(){
 function layerChoices(){
  const {layer,index,detail}=layerSelection;
  const hub=layer==='hub';
- const values=hub?['Knowledge','Wisdom','Obedience','Holiness','Grateful','Mindful','Integrity','Temperance']:[15,30,45,60,75,90];
+ const values=hub?['Knowledge','Wisdom','Obedience','Holiness','Grateful','Mindful','Integrity','Temperance']:layer==='mercy'?['Merciful','Forgiving','Indulgent']:['Just','Exacting','Severe'];
  const row=explorationRow(hub?'Hub attributes':layer==='mercy'?'Mercy tints':'Justice shades');
  row.classList.add('layerChoiceRow');
- for(const value of values){
-   const text=hub?value:value+'% '+(layer==='mercy'?'white':'black');
+ for(const [step,value] of values.entries()){
+   const text=value;
    const button=explorationButton(row,text,event=>chooseLayerItem(layer,index,event.detail>0,value),detail===value);
    if(!hub){
-     button.style.background='color-mix(in srgb, '+positions[index][2]+', '+(layer==='mercy'?'white':'black')+' '+value+'%)';
+     button.style.background='color-mix(in srgb, '+positions[index][2]+', '+(layer==='mercy'?'white':'black')+' '+[25,50,75][step]+'%)';
      button.style.color=layer==='justice'?'white':'#182a22';
    }
  }
