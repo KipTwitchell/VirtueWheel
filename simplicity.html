@@ -1940,7 +1940,21 @@ $('wheel').onpointerdown=e=>{if(mode==='covered'&&e.target!==$('flap')&&e.target
 $('wheel').onpointercancel=()=>start=null;
 $('wheel').onpointerup=e=>{if(start!==null){const turns=Math.round((((bearing(e)-start+540)%360)-180)/30);start=null;if(turns)step(turns)}};
 document.onkeydown=e=>{if((mode==='covered'||(mode==='vice'&&ringReady))&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();(mode==='vice'?advancePair:step)(e.key==='ArrowLeft'?-1:1)}};
-const arrival=new URLSearchParams(location.search).get('virtue');
-if(virtueNames.includes(arrival))angle=virtueNames.indexOf(arrival);
+const arrivalParams=new URLSearchParams(location.search);
+const arrival=arrivalParams.get('virtue');
+const relationship=arrivalParams.get('compare');
+if(virtueNames.includes(arrival)){
+ angle=virtueNames.indexOf(arrival);
+ if(['complement','vice','schema'].includes(relationship)){
+   explorePanel='layers';
+   layerAnchor={layer:'virtue',index:angle};
+   if(relationship==='complement')layerSelection={layer:'virtue',index:(angle+6)%12};
+   else{
+     visibleLayers.add('vice');
+     if(relationship==='schema')visibleLayers.add('schema');
+     layerSelection={layer:relationship,index:angle};
+   }
+ }
+}
 render();
 </script></html>
