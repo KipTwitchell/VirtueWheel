@@ -1595,9 +1595,8 @@ function showExpansionPreview(scene,radius){
 
 function nearbyLock(scene,index,radius,locked,callback){
  const [x,y]=index===null?[220,220]:point(radius,index*30);
- const left=x>220;
- const px=Math.max(3,Math.min(395,left?x-49:x+9));
- const py=Math.max(48,Math.min(353,y-19));
+ const px=Math.max(2,Math.min(406,x-16));
+ const py=Math.max(2,Math.min(406,y-16));
  const label=locked?'Unlock':'Lock';
  const g=shape('g',{transform:'translate('+px+' '+py+')',role:'button',tabindex:0,class:'exploreChoice','aria-label':label+' selected item'},scene);
  shape('rect',{width:40,height:40,rx:14,fill:'#fffdf6','fill-opacity':.72},g);
@@ -1682,9 +1681,8 @@ function layerExplorer(i){
    const {layer,index}=layerSelection;
    const range=rings[layer];
    const radius=range?(range[0]+range[1])/2:0;
-   const locked=sameLayerItem(layerAnchor,layerSelection);
-   if(range)nearbyLock(scene,index,radius,locked,()=>{
-     layerAnchor=locked?null:layerSelection;
+     if(range&&!layerAnchor)nearbyLock(scene,index,radius,false,()=>{
+     layerAnchor=layerSelection;
      lastLayerTap=null;
      render();
    });
@@ -1699,13 +1697,18 @@ function layerExplorer(i){
    const visible=visibleLayers.has(item.layer)||expanded&&['mercy','justice'].includes(item.layer);
    paragraph.append(heading,locked&&!visible?' (hidden layer). ':'. ',layerText(item));
  };
- if(layerAnchor)present(layerAnchor,true);
- if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection);
+ const comparing=layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection);
+ if(comparing){
+   const heading=document.createElement('strong');
+   heading.textContent=layerTitle(layerSelection)+' from the perspective of '+layerTitle(layerAnchor)+' 🔒';
+   paragraph.append(heading,'. ',layerText(layerSelection));
+ }else if(layerAnchor)present(layerAnchor,true);
+ else if(layerSelection)present(layerSelection);
  if(guideMode&&guideNote&&!layerAnchor){
    if(paragraph.hasChildNodes())paragraph.append(' ');
    paragraph.append(guideNote);
  }
- if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
+ if(comparing){
    const question=document.createElement('p');
    const sameSlice=layerAnchor.index===layerSelection.index;
    const across=layerAnchor.index!==null&&layerSelection.index===(layerAnchor.index+6)%12;
