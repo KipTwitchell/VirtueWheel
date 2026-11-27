@@ -1691,16 +1691,20 @@ function layerExplorer(i){
  }
  if(layerSelection&&['hub','mercy','justice'].includes(layerSelection.layer))layerChoices();
  const readout=$('extra');
- const present=(item,prefix)=>{
-   const line=document.createElement('p');
+ const paragraph=document.createElement('p');
+ const present=(item,locked=false)=>{
+   if(paragraph.hasChildNodes())paragraph.append(' ');
    const heading=document.createElement('strong');
-   heading.textContent=prefix+layerNames[item.layer]+' · '+layerTitle(item);
-   line.append(heading,document.createElement('br'),layerText(item));
-   readout.append(line);
+   heading.textContent=layerNames[item.layer]+' · '+layerTitle(item)+(locked?' 🔒':'');
+   const visible=visibleLayers.has(item.layer)||expanded&&['mercy','justice'].includes(item.layer);
+   paragraph.append(heading,locked&&!visible?' (hidden layer). ':'. ',layerText(item));
  };
- if(layerAnchor)present(layerAnchor,(visibleLayers.has(layerAnchor.layer)||expanded&&['mercy','justice'].includes(layerAnchor.layer))?'Locked · ':'Locked · hidden layer · ');
- if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection,'');
- if(guideMode&&guideNote&&!layerAnchor){const note=document.createElement('p');note.textContent=guideNote;readout.append(note);}
+ if(layerAnchor)present(layerAnchor,true);
+ if(layerSelection&&!sameLayerItem(layerAnchor,layerSelection))present(layerSelection);
+ if(guideMode&&guideNote&&!layerAnchor){
+   if(paragraph.hasChildNodes())paragraph.append(' ');
+   paragraph.append(guideNote);
+ }
  if(layerAnchor&&layerSelection&&!sameLayerItem(layerAnchor,layerSelection)){
    const question=document.createElement('p');
    const sameSlice=layerAnchor.index===layerSelection.index;
@@ -1720,8 +1724,9 @@ function layerExplorer(i){
    }
    if(written)question.textContent=written;
    if(!question.textContent)question.textContent=sameSlice?'Same slice: How does each layer change the way you would respond?':across?'Across the wheel: What does the complement’s side reveal about the item you locked?':'What does this second item help you notice about the one you locked?';
-   readout.append(question);
+   paragraph.append(' ',question.textContent);
  }
+ if(paragraph.hasChildNodes())readout.append(paragraph);
  if(layerSelection&&(layerSelection.layer!=='hub'||layerSelection.detail)&&!sameLayerItem(layerAnchor,layerSelection))action('Lock '+layerTitle(layerSelection),()=>{layerAnchor=layerSelection;lastLayerTap=null;render()});
  if(layerAnchor)action('Unlock '+layerTitle(layerAnchor),()=>{layerAnchor=null;lastLayerTap=null;render()});
  action('Return to '+virtueNames[i],()=>openExplorePanel(''));
@@ -1785,7 +1790,7 @@ function explorationView(i){
  const tint=lens==='Mercy';
  const shade=lens==='Justice';
  const select=value=>exploreSlice(i,value);
- $('heading').textContent=(comparing?name+' and '+virtueNames[comparingIndex]:name)+(locked?' · Locked':'');
+ $('heading').textContent=(comparing?name+' and '+virtueNames[comparingIndex]:name)+(locked?' 🔒':'');
  $('caption').textContent=situation;
  const detail=document.createElement('p');
  detail.className='explorationDetail';
